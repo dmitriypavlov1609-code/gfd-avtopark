@@ -410,6 +410,8 @@ function Dashboard({
   const [hired, setHired] = useState([]);
   const [daily, setDaily] = useState([]);
   const [period, setPeriod] = useState('day');
+  const [metric, setMetric] = useState('routes');
+  const [picked, setPicked] = useState('');
   useEffect(() => {
     fetch('/data/own-fleet.json').then(r => r.json()).then(setOwn).catch(() => {});
     fetch('/data/hired-fleet.json').then(r => r.json()).then(setHired).catch(() => {});
@@ -433,10 +435,42 @@ function Dashboard({
     };
   }).sort((a, b) => b.total - a.total);
   const maxProj = Math.max(1, ...byProject.map(p => p.total));
+
+  // 4 метрики для клика по карточкам; routes — поток (сумма), остальные — запас (среднее)
+  const METRICS = {
+    routes: {
+      label: 'Маршруты',
+      get: d => d.routes,
+      agg: 'sum',
+      kpi: routesToday
+    },
+    total: {
+      label: 'ТС на линии',
+      get: d => (d.own_on || 0) + (d.hired_on || 0),
+      agg: 'avg',
+      kpi: totalOnLine
+    },
+    own: {
+      label: 'Свои на линии',
+      get: d => d.own_on || 0,
+      agg: 'avg',
+      kpi: ownOnLine.length
+    },
+    hired: {
+      label: 'Частники на линии',
+      get: d => d.hired_on || 0,
+      agg: 'avg',
+      kpi: hiredOnLine.length
+    }
+  };
+  const M = METRICS[metric],
+    gv = M.get,
+    agg = a => M.agg === 'sum' ? a.reduce((s, x) => s + x, 0) : Math.round(a.reduce((s, x) => s + x, 0) / (a.length || 1));
   const series = (() => {
     if (period === 'day') return daily.slice(-30).map(d => ({
       label: d.date.slice(8, 10) + '.' + d.date.slice(5, 7),
-      v: d.routes
+      v: gv(d),
+      date: d.date
     }));
     if (period === 'week') {
       const wk = {};
@@ -445,24 +479,29 @@ function Dashboard({
         const mon = new Date(dt);
         mon.setDate(dt.getDate() - (dt.getDay() + 6) % 7);
         const k = mon.toISOString().slice(0, 10);
-        wk[k] = (wk[k] || 0) + d.routes;
+        (wk[k] = wk[k] || []).push(gv(d));
       });
-      return Object.entries(wk).slice(-12).map(([k, v]) => ({
+      return Object.entries(wk).slice(-12).map(([k, a]) => ({
         label: k.slice(8, 10) + '.' + k.slice(5, 7),
-        v
+        v: agg(a)
       }));
     }
     const mo = {};
     const NM = ['', 'янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     daily.forEach(d => {
       const k = d.date.slice(0, 7);
-      mo[k] = (mo[k] || 0) + d.routes;
+      (mo[k] = mo[k] || []).push(gv(d));
     });
-    return Object.entries(mo).slice(-6).map(([k, v]) => ({
+    return Object.entries(mo).slice(-6).map(([k, a]) => ({
       label: NM[+k.slice(5, 7)],
-      v
+      v: agg(a)
     }));
   })();
+  const pickedRow = picked ? daily.find(d => d.date === picked) : null;
+  const pickedVal = pickedRow ? gv(pickedRow) : null;
+  const dmin = daily.length ? daily[0].date : '';
+  const dmax = daily.length ? daily[daily.length - 1].date : '';
+  const fmtDate = s => s ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4) : '';
   const W = 680,
     H = 210,
     P = 10;
@@ -506,63 +545,110 @@ function Dashboard({
     onClick: download
   }, "↓ Скачать отчёт"))), /*#__PURE__*/React.createElement("div", {
     className: "stats"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "stat"
+  }, [{
+    k: 'routes',
+    l: 'маршрутов сегодня',
+    v: routesToday,
+    d: /*#__PURE__*/React.createElement("span", {
+      className: 'delta ' + (routesDelta >= 0 ? 'up' : 'down')
+    }, routesDelta >= 0 ? '+' : '', routesDelta, " vs вчера")
+  }, {
+    k: 'total',
+    l: 'ТС на линии',
+    v: totalOnLine,
+    d: /*#__PURE__*/React.createElement("span", {
+      className: "lab"
+    }, "свои + частники")
+  }, {
+    k: 'own',
+    l: 'свои на линии',
+    v: ownOnLine.length,
+    d: /*#__PURE__*/React.createElement("span", {
+      className: "lab"
+    }, "из ", own.length, " в парке")
+  }, {
+    k: 'hired',
+    l: 'частники на линии',
+    v: hiredOnLine.length,
+    d: /*#__PURE__*/React.createElement("span", {
+      className: "lab"
+    }, "из ", hired.length, " привлечённых")
+  }].map(c => /*#__PURE__*/React.createElement("div", {
+    key: c.k,
+    className: "stat",
+    onClick: () => setMetric(c.k),
+    style: {
+      cursor: 'pointer',
+      outline: metric === c.k ? '1.5px solid var(--coral)' : '1.5px solid transparent',
+      outlineOffset: -1,
+      transition: 'outline-color .15s'
+    }
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
-  }, "► маршрутов сегодня"), /*#__PURE__*/React.createElement("div", {
+  }, "► ", c.l, " ", metric === c.k ? '▾' : ''), /*#__PURE__*/React.createElement("div", {
     className: "v"
-  }, routesToday), /*#__PURE__*/React.createElement("div", {
+  }, c.v), /*#__PURE__*/React.createElement("div", {
     className: "d"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: 'delta ' + (routesDelta >= 0 ? 'up' : 'down')
-  }, routesDelta >= 0 ? '+' : '', routesDelta), /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "vs вчера"))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "l"
-  }, "► ТС на линии"), /*#__PURE__*/React.createElement("div", {
-    className: "v"
-  }, totalOnLine), /*#__PURE__*/React.createElement("div", {
-    className: "d"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "свои + частники"))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "l"
-  }, "► свои на линии"), /*#__PURE__*/React.createElement("div", {
-    className: "v"
-  }, ownOnLine.length), /*#__PURE__*/React.createElement("div", {
-    className: "d"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "из ", own.length, " в парке"))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "l"
-  }, "► частники на линии"), /*#__PURE__*/React.createElement("div", {
-    className: "v"
-  }, hiredOnLine.length), /*#__PURE__*/React.createElement("div", {
-    className: "d"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "из ", hired.length, " привлечённых")))), /*#__PURE__*/React.createElement("div", {
+  }, c.d)))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "Динамика маршрутов"), /*#__PURE__*/React.createElement("div", {
+  }, "Динамика · ", M.label), /*#__PURE__*/React.createElement("div", {
     className: "actions",
     style: {
       display: 'flex',
-      gap: 8
+      gap: 8,
+      alignItems: 'center',
+      flexWrap: 'wrap'
     }
-  }, PBTN('day', 'день'), PBTN('week', 'неделя'), PBTN('month', 'месяц'))), /*#__PURE__*/React.createElement("div", {
+  }, PBTN('day', 'день'), PBTN('week', 'неделя'), PBTN('month', 'месяц'), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: picked,
+    min: dmin,
+    max: dmax,
+    onChange: e => setPicked(e.target.value),
+    style: {
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      color: 'var(--cream)',
+      padding: '5px 8px',
+      fontSize: 12,
+      colorScheme: 'dark'
+    }
+  }), picked && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPicked('')
+  }, "сброс"))), /*#__PURE__*/React.createElement("div", {
     className: "b"
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, picked && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12,
+      padding: '10px 14px',
+      borderRadius: 10,
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-2)',
+      fontSize: 13
+    }
+  }, M.label, " на ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: 'var(--cream)'
+    }
+  }, fmtDate(picked))), /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: 'var(--coral)',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 18
+    }
+  }, pickedVal != null ? pickedVal : 'нет данных')), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${W} ${H}`,
     style: {
       width: '100%',
@@ -947,9 +1033,12 @@ function Bookings() {
 function Fleet() {
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState('');
+  const [ktg, setKtg] = useState([]);
+  const [kper, setKper] = useState('day');
   const sort = useSort();
   useEffect(() => {
     fetch('/data/own-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
+    fetch('/data/own-ktg.json?t=' + Date.now()).then(r => r.json()).then(d => setKtg(d.daily || [])).catch(() => {});
   }, []);
   const SC = {
     'На линии': '#5DCB94',
@@ -990,6 +1079,54 @@ function Fleet() {
     brand: v => v.brand + ' ' + v.type,
     ready: v => v.ready ? 1 : 0
   });
+
+  // КТГ (коэффициент технической готовности) — динамика как в ОБЕ2
+  const ktgNow = ktg.length ? ktg[ktg.length - 1].ktg : total ? Math.round((total - rem) / total * 100) : 0;
+  const ktgAvg = a => Math.round(a.reduce((s, x) => s + x, 0) / (a.length || 1));
+  const kSeries = (() => {
+    if (kper === 'day') return ktg.slice(-30).map(d => ({
+      label: d.date.slice(8, 10) + '.' + d.date.slice(5, 7),
+      v: d.ktg
+    }));
+    if (kper === 'week') {
+      const wk = {};
+      ktg.forEach(d => {
+        const dt = new Date(d.date);
+        const mon = new Date(dt);
+        mon.setDate(dt.getDate() - (dt.getDay() + 6) % 7);
+        const k = mon.toISOString().slice(0, 10);
+        (wk[k] = wk[k] || []).push(d.ktg);
+      });
+      return Object.entries(wk).slice(-12).map(([k, a]) => ({
+        label: k.slice(8, 10) + '.' + k.slice(5, 7),
+        v: ktgAvg(a)
+      }));
+    }
+    const mo = {};
+    const NM = ['', 'янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    ktg.forEach(d => {
+      const k = d.date.slice(0, 7);
+      (mo[k] = mo[k] || []).push(d.ktg);
+    });
+    return Object.entries(mo).slice(-6).map(([k, a]) => ({
+      label: NM[+k.slice(5, 7)],
+      v: ktgAvg(a)
+    }));
+  })();
+  const KW = 680,
+    KH = 190,
+    KP = 10,
+    kn = kSeries.length;
+  const kmax = Math.max(100, ...kSeries.map(s => s.v)),
+    kmin = Math.min(60, ...kSeries.map(s => s.v));
+  const kx = i => kn > 1 ? KP + i * (KW - 2 * KP) / (kn - 1) : KW / 2,
+    ky = v => KH - KP - (v - kmin) / (kmax - kmin || 1) * (KH - 2 * KP);
+  const kline = kSeries.map((s, i) => (i ? 'L' : 'M') + kx(i).toFixed(1) + ' ' + ky(s.v).toFixed(1)).join(' ');
+  const karea = kn ? kline + ` L ${kx(kn - 1).toFixed(1)} ${KH - KP} L ${kx(0).toFixed(1)} ${KH - KP} Z` : '';
+  const KB = (id, txt) => /*#__PURE__*/React.createElement("button", {
+    className: kper === id ? 'primary' : '',
+    onClick: () => setKper(id)
+  }, txt);
   const download = () => {
     const head = ['Госномер', 'Марка', 'Тип', 'Класс', 'Проект', 'Статус', 'Готовность', 'Пробег', 'АТП'];
     const lines = [head.join(';'), ...rows.map(v => [v.plate, v.brand, v.type, v.kind, v.project, v.status, v.ready ? 'исправна' : '—', v.mileage, v.atp].join(';'))];
@@ -1147,6 +1284,119 @@ function Fleet() {
       background: a[2]
     }
   }))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: '16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Аналитика · КТГ (коэффициент технической готовности)"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 18,
+      fontWeight: 700,
+      color: ktgNow >= 75 ? 'var(--green)' : 'var(--warn)'
+    }
+  }, ktgNow, "%"), KB('day', 'день'), KB('week', 'неделя'), KB('month', 'месяц'))), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${KW} ${KH}`,
+    style: {
+      width: '100%',
+      height: 190,
+      display: 'block'
+    },
+    preserveAspectRatio: "none"
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "kg",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: "var(--green)",
+    stopOpacity: "0.30"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: "var(--green)",
+    stopOpacity: "0"
+  }))), [0.25, 0.5, 0.75].map((g, i) => /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: KP,
+    x2: KW - KP,
+    y1: KP + g * (KH - 2 * KP),
+    y2: KP + g * (KH - 2 * KP),
+    stroke: "var(--line)",
+    strokeWidth: "1"
+  })), karea && /*#__PURE__*/React.createElement("path", {
+    d: karea,
+    fill: "url(#kg)"
+  }), kline && /*#__PURE__*/React.createElement("path", {
+    d: kline,
+    fill: "none",
+    stroke: "var(--green)",
+    strokeWidth: "2.5",
+    strokeLinejoin: "round"
+  }), kn > 0 && /*#__PURE__*/React.createElement("circle", {
+    cx: kx(kn - 1),
+    cy: ky(kSeries[kn - 1].v),
+    r: "4",
+    fill: "var(--green)"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "util-legend",
+    style: {
+      marginTop: 6,
+      justifyContent: 'space-between',
+      color: 'var(--cream-3)',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 10.5
+    }
+  }, kSeries.filter((_, i) => kn <= 12 || i % Math.ceil(kn / 12) === 0).map((s, i) => /*#__PURE__*/React.createElement("span", {
+    key: i
+  }, s.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      paddingTop: 12,
+      borderTop: '1px solid var(--line)',
+      display: 'flex',
+      gap: 24,
+      fontSize: 13
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-2)'
+    }
+  }, "Исправны: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: 'var(--cream)'
+    }
+  }, total - rem), " / ", total), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-2)'
+    }
+  }, "В ремонте: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: 'var(--warn)'
+    }
+  }, rem)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-2)'
+    }
+  }, "КТГ сейчас: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: ktgNow >= 75 ? 'var(--green)' : 'var(--warn)'
+    }
+  }, ktgNow, "%"))))), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       marginTop: '16px'

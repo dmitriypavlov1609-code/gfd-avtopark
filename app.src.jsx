@@ -159,6 +159,8 @@ function Dashboard({setPage}){
   const [hired,setHired]=useState([]);
   const [daily,setDaily]=useState([]);
   const [period,setPeriod]=useState('day');
+  const [metric,setMetric]=useState('routes');
+  const [picked,setPicked]=useState('');
   useEffect(()=>{
     fetch('/data/own-fleet.json').then(r=>r.json()).then(setOwn).catch(()=>{});
     fetch('/data/hired-fleet.json').then(r=>r.json()).then(setHired).catch(()=>{});
@@ -180,17 +182,32 @@ function Dashboard({setPage}){
   }).sort((a,b)=>b.total-a.total);
   const maxProj = Math.max(1,...byProject.map(p=>p.total));
 
+  // 4 метрики для клика по карточкам; routes — поток (сумма), остальные — запас (среднее)
+  const METRICS={
+    routes:{label:'Маршруты', get:d=>d.routes, agg:'sum', kpi:routesToday},
+    total:{label:'ТС на линии', get:d=>(d.own_on||0)+(d.hired_on||0), agg:'avg', kpi:totalOnLine},
+    own:{label:'Свои на линии', get:d=>d.own_on||0, agg:'avg', kpi:ownOnLine.length},
+    hired:{label:'Частники на линии', get:d=>d.hired_on||0, agg:'avg', kpi:hiredOnLine.length},
+  };
+  const M=METRICS[metric], gv=M.get, agg=a=>M.agg==='sum'?a.reduce((s,x)=>s+x,0):Math.round(a.reduce((s,x)=>s+x,0)/(a.length||1));
+
   const series = (()=>{
-    if(period==='day') return daily.slice(-30).map(d=>({label:d.date.slice(8,10)+'.'+d.date.slice(5,7), v:d.routes}));
+    if(period==='day') return daily.slice(-30).map(d=>({label:d.date.slice(8,10)+'.'+d.date.slice(5,7), v:gv(d), date:d.date}));
     if(period==='week'){
       const wk={};
-      daily.forEach(d=>{ const dt=new Date(d.date); const mon=new Date(dt); mon.setDate(dt.getDate()-((dt.getDay()+6)%7)); const k=mon.toISOString().slice(0,10); wk[k]=(wk[k]||0)+d.routes; });
-      return Object.entries(wk).slice(-12).map(([k,v])=>({label:k.slice(8,10)+'.'+k.slice(5,7), v}));
+      daily.forEach(d=>{ const dt=new Date(d.date); const mon=new Date(dt); mon.setDate(dt.getDate()-((dt.getDay()+6)%7)); const k=mon.toISOString().slice(0,10); (wk[k]=wk[k]||[]).push(gv(d)); });
+      return Object.entries(wk).slice(-12).map(([k,a])=>({label:k.slice(8,10)+'.'+k.slice(5,7), v:agg(a)}));
     }
     const mo={}; const NM=['','янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-    daily.forEach(d=>{ const k=d.date.slice(0,7); mo[k]=(mo[k]||0)+d.routes; });
-    return Object.entries(mo).slice(-6).map(([k,v])=>({label:NM[+k.slice(5,7)], v}));
+    daily.forEach(d=>{ const k=d.date.slice(0,7); (mo[k]=mo[k]||[]).push(gv(d)); });
+    return Object.entries(mo).slice(-6).map(([k,a])=>({label:NM[+k.slice(5,7)], v:agg(a)}));
   })();
+
+  const pickedRow = picked ? daily.find(d=>d.date===picked) : null;
+  const pickedVal = pickedRow ? gv(pickedRow) : null;
+  const dmin = daily.length ? daily[0].date : '';
+  const dmax = daily.length ? daily[daily.length-1].date : '';
+  const fmtDate = s => s ? s.slice(8,10)+'.'+s.slice(5,7)+'.'+s.slice(0,4) : '';
 
   const W=680,H=210,P=10;
   const max=Math.max(1,...series.map(s=>s.v));
@@ -233,18 +250,36 @@ function Dashboard({setPage}){
       </div>
 
       <div className="stats">
-        <div className="stat"><div className="l">► маршрутов сегодня</div><div className="v">{routesToday}</div><div className="d"><span className={'delta '+(routesDelta>=0?'up':'down')}>{routesDelta>=0?'+':''}{routesDelta}</span><span className="lab">vs вчера</span></div></div>
-        <div className="stat"><div className="l">► ТС на линии</div><div className="v">{totalOnLine}</div><div className="d"><span className="lab">свои + частники</span></div></div>
-        <div className="stat"><div className="l">► свои на линии</div><div className="v">{ownOnLine.length}</div><div className="d"><span className="lab">из {own.length} в парке</span></div></div>
-        <div className="stat"><div className="l">► частники на линии</div><div className="v">{hiredOnLine.length}</div><div className="d"><span className="lab">из {hired.length} привлечённых</span></div></div>
+        {[
+          {k:'routes', l:'маршрутов сегодня', v:routesToday, d:<span className={'delta '+(routesDelta>=0?'up':'down')}>{routesDelta>=0?'+':''}{routesDelta} vs вчера</span>},
+          {k:'total', l:'ТС на линии', v:totalOnLine, d:<span className="lab">свои + частники</span>},
+          {k:'own', l:'свои на линии', v:ownOnLine.length, d:<span className="lab">из {own.length} в парке</span>},
+          {k:'hired', l:'частники на линии', v:hiredOnLine.length, d:<span className="lab">из {hired.length} привлечённых</span>},
+        ].map(c=>(
+          <div key={c.k} className="stat" onClick={()=>setMetric(c.k)}
+            style={{cursor:'pointer',outline:metric===c.k?'1.5px solid var(--coral)':'1.5px solid transparent',outlineOffset:-1,transition:'outline-color .15s'}}>
+            <div className="l">► {c.l} {metric===c.k?'▾':''}</div><div className="v">{c.v}</div><div className="d">{c.d}</div>
+          </div>
+        ))}
       </div>
 
       <div className="card">
         <div className="h">
-          <div className="t">Динамика маршрутов</div>
-          <div className="actions" style={{display:'flex',gap:8}}>{PBTN('day','день')}{PBTN('week','неделя')}{PBTN('month','месяц')}</div>
+          <div className="t">Динамика · {M.label}</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            {PBTN('day','день')}{PBTN('week','неделя')}{PBTN('month','месяц')}
+            <input type="date" value={picked} min={dmin} max={dmax} onChange={e=>setPicked(e.target.value)}
+              style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'5px 8px',fontSize:12,colorScheme:'dark'}}/>
+            {picked && <button onClick={()=>setPicked('')}>сброс</button>}
+          </div>
         </div>
         <div className="b">
+          {picked && (
+            <div style={{marginBottom:12,padding:'10px 14px',borderRadius:10,background:'var(--panel-2)',border:'1px solid var(--line-2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{color:'var(--cream-2)',fontSize:13}}>{M.label} на <b style={{color:'var(--cream)'}}>{fmtDate(picked)}</b></span>
+              <b style={{color:'var(--coral)',fontFamily:"'JetBrains Mono', monospace",fontSize:18}}>{pickedVal!=null?pickedVal:'нет данных'}</b>
+            </div>
+          )}
           <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:210,display:'block'}} preserveAspectRatio="none">
             <defs>
               <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
@@ -408,8 +443,13 @@ function Bookings(){
 function Fleet(){
   const [rows,setRows]=useState([]);
   const [q,setQ]=useState('');
+  const [ktg,setKtg]=useState([]);
+  const [kper,setKper]=useState('day');
   const sort=useSort();
-  useEffect(()=>{ fetch('/data/own-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
+  useEffect(()=>{
+    fetch('/data/own-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([]));
+    fetch('/data/own-ktg.json?t='+Date.now()).then(r=>r.json()).then(d=>setKtg(d.daily||[])).catch(()=>{});
+  },[]);
   const SC={'На линии':'#5DCB94','Ремонт':'#FFB84A','Капремонт':'#FF6464','Резерв':'#4A8FA8'};
   const pill=s=>{const c=SC[s]||'#8B8377';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26',whiteSpace:'nowrap'}}>{s}</span>;};
   const total=rows.length, on=rows.filter(v=>v.status==='На линии').length;
@@ -421,6 +461,21 @@ function Fleet(){
     rows.filter(v=>!q || [v.plate,v.brand,v.type,v.kind,v.project,v.status,v.atp].join(' ').toLowerCase().includes(q.toLowerCase())),
     {brand:v=>v.brand+' '+v.type, ready:v=>v.ready?1:0}
   );
+
+  // КТГ (коэффициент технической готовности) — динамика как в ОБЕ2
+  const ktgNow = ktg.length ? ktg[ktg.length-1].ktg : (total?Math.round((total-rem)/total*100):0);
+  const ktgAvg = a=>Math.round(a.reduce((s,x)=>s+x,0)/(a.length||1));
+  const kSeries=(()=>{
+    if(kper==='day') return ktg.slice(-30).map(d=>({label:d.date.slice(8,10)+'.'+d.date.slice(5,7), v:d.ktg}));
+    if(kper==='week'){ const wk={}; ktg.forEach(d=>{const dt=new Date(d.date);const mon=new Date(dt);mon.setDate(dt.getDate()-((dt.getDay()+6)%7));const k=mon.toISOString().slice(0,10);(wk[k]=wk[k]||[]).push(d.ktg);}); return Object.entries(wk).slice(-12).map(([k,a])=>({label:k.slice(8,10)+'.'+k.slice(5,7),v:ktgAvg(a)})); }
+    const mo={}; const NM=['','янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек']; ktg.forEach(d=>{const k=d.date.slice(0,7);(mo[k]=mo[k]||[]).push(d.ktg);}); return Object.entries(mo).slice(-6).map(([k,a])=>({label:NM[+k.slice(5,7)],v:ktgAvg(a)}));
+  })();
+  const KW=680,KH=190,KP=10,kn=kSeries.length;
+  const kmax=Math.max(100,...kSeries.map(s=>s.v)),kmin=Math.min(60,...kSeries.map(s=>s.v));
+  const kx=i=>kn>1?KP+i*(KW-2*KP)/(kn-1):KW/2, ky=v=>(KH-KP)-(v-kmin)/((kmax-kmin)||1)*(KH-2*KP);
+  const kline=kSeries.map((s,i)=>(i?'L':'M')+kx(i).toFixed(1)+' '+ky(s.v).toFixed(1)).join(' ');
+  const karea=kn?kline+` L ${kx(kn-1).toFixed(1)} ${KH-KP} L ${kx(0).toFixed(1)} ${KH-KP} Z`:'';
+  const KB=(id,txt)=>(<button className={kper===id?'primary':''} onClick={()=>setKper(id)}>{txt}</button>);
   const download=()=>{
     const head=['Госномер','Марка','Тип','Класс','Проект','Статус','Готовность','Пробег','АТП'];
     const lines=[head.join(';'),...rows.map(v=>[v.plate,v.brand,v.type,v.kind,v.project,v.status,v.ready?'исправна':'—',v.mileage,v.atp].join(';'))];
@@ -458,6 +513,33 @@ function Fleet(){
           ))}
         </div></div>
       </div>
+      <div className="card" style={{marginTop:'16px'}}>
+        <div className="h">
+          <div className="t">Аналитика · КТГ (коэффициент технической готовности)</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center'}}>
+            <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:18,fontWeight:700,color:ktgNow>=75?'var(--green)':'var(--warn)'}}>{ktgNow}%</span>
+            {KB('day','день')}{KB('week','неделя')}{KB('month','месяц')}
+          </div>
+        </div>
+        <div className="b">
+          <svg viewBox={`0 0 ${KW} ${KH}`} style={{width:'100%',height:190,display:'block'}} preserveAspectRatio="none">
+            <defs><linearGradient id="kg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--green)" stopOpacity="0.30"/><stop offset="100%" stopColor="var(--green)" stopOpacity="0"/></linearGradient></defs>
+            {[0.25,0.5,0.75].map((g,i)=>(<line key={i} x1={KP} x2={KW-KP} y1={KP+g*(KH-2*KP)} y2={KP+g*(KH-2*KP)} stroke="var(--line)" strokeWidth="1"/>))}
+            {karea && <path d={karea} fill="url(#kg)"/>}
+            {kline && <path d={kline} fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinejoin="round"/>}
+            {kn>0 && <circle cx={kx(kn-1)} cy={ky(kSeries[kn-1].v)} r="4" fill="var(--green)"/>}
+          </svg>
+          <div className="util-legend" style={{marginTop:6,justifyContent:'space-between',color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>
+            {kSeries.filter((_,i)=>kn<=12||i%Math.ceil(kn/12)===0).map((s,i)=>(<span key={i}>{s.label}</span>))}
+          </div>
+          <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--line)',display:'flex',gap:24,fontSize:13}}>
+            <span style={{color:'var(--cream-2)'}}>Исправны: <b style={{color:'var(--cream)'}}>{total-rem}</b> / {total}</span>
+            <span style={{color:'var(--cream-2)'}}>В ремонте: <b style={{color:'var(--warn)'}}>{rem}</b></span>
+            <span style={{color:'var(--cream-2)'}}>КТГ сейчас: <b style={{color:ktgNow>=75?'var(--green)':'var(--warn)'}}>{ktgNow}%</b></span>
+          </div>
+        </div>
+      </div>
+
       <div className="card" style={{marginTop:'16px'}}>
         <div className="h">
           <div className="t">Список ТС</div>
