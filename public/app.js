@@ -937,65 +937,221 @@ function Topbar({
 function Dashboard({
   setPage
 }) {
+  const [own, setOwn] = useState([]);
+  const [hired, setHired] = useState([]);
+  const [daily, setDaily] = useState([]);
+  const [period, setPeriod] = useState('day');
+  useEffect(() => {
+    fetch('/data/own-fleet.json').then(r => r.json()).then(setOwn).catch(() => {});
+    fetch('/data/hired-fleet.json').then(r => r.json()).then(setHired).catch(() => {});
+    fetch('/data/routes.json').then(r => r.json()).then(d => setDaily(d.daily || [])).catch(() => {});
+  }, []);
+  const PROJ = ['Лемана Про', 'Магнит', 'Х5 Retail', 'Озон', 'ВкусВилл', 'Самокат'];
+  const ownOnLine = own.filter(v => v.status === 'На линии');
+  const hiredOnLine = hired.filter(h => h.onLine);
+  const routesToday = daily.length ? daily[daily.length - 1].routes : 0;
+  const routesPrev = daily.length > 1 ? daily[daily.length - 2].routes : 0;
+  const routesDelta = routesToday - routesPrev;
+  const totalOnLine = ownOnLine.length + hiredOnLine.length;
+  const byProject = PROJ.map(p => {
+    const o = ownOnLine.filter(v => v.project === p).length;
+    const h = hiredOnLine.filter(x => (x.projects || []).includes(p)).length;
+    return {
+      project: p,
+      own: o,
+      hired: h,
+      total: o + h
+    };
+  }).sort((a, b) => b.total - a.total);
+  const maxProj = Math.max(1, ...byProject.map(p => p.total));
+  const series = (() => {
+    if (period === 'day') return daily.slice(-30).map(d => ({
+      label: d.date.slice(8, 10) + '.' + d.date.slice(5, 7),
+      v: d.routes
+    }));
+    if (period === 'week') {
+      const wk = {};
+      daily.forEach(d => {
+        const dt = new Date(d.date);
+        const mon = new Date(dt);
+        mon.setDate(dt.getDate() - (dt.getDay() + 6) % 7);
+        const k = mon.toISOString().slice(0, 10);
+        wk[k] = (wk[k] || 0) + d.routes;
+      });
+      return Object.entries(wk).slice(-12).map(([k, v]) => ({
+        label: k.slice(8, 10) + '.' + k.slice(5, 7),
+        v
+      }));
+    }
+    const mo = {};
+    const NM = ['', 'янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    daily.forEach(d => {
+      const k = d.date.slice(0, 7);
+      mo[k] = (mo[k] || 0) + d.routes;
+    });
+    return Object.entries(mo).slice(-6).map(([k, v]) => ({
+      label: NM[+k.slice(5, 7)],
+      v
+    }));
+  })();
+  const W = 680,
+    H = 210,
+    P = 10;
+  const max = Math.max(1, ...series.map(s => s.v));
+  const min = Math.min(0, ...series.map(s => s.v));
+  const n = series.length;
+  const xp = i => n > 1 ? P + i * (W - 2 * P) / (n - 1) : W / 2;
+  const yp = v => H - P - (v - min) / (max - min || 1) * (H - 2 * P);
+  const line = series.map((s, i) => (i ? 'L' : 'M') + xp(i).toFixed(1) + ' ' + yp(s.v).toFixed(1)).join(' ');
+  const area = n ? line + ` L ${xp(n - 1).toFixed(1)} ${H - P} L ${xp(0).toFixed(1)} ${H - P} Z` : '';
+  const today = new Date();
+  const NMO = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  const dateStr = today.getDate() + ' ' + NMO[today.getMonth()] + ' ' + today.getFullYear();
+  const download = () => {
+    let csv = '﻿Главный дашборд · маршруты на ' + dateStr + '\n\n';
+    csv += 'Показатель;Значение\n';
+    csv += 'Маршрутов сегодня;' + routesToday + '\nТС на линии (всего);' + totalOnLine + '\nСвои на линии;' + ownOnLine.length + '\nЧастники на линии;' + hiredOnLine.length + '\n\n';
+    csv += 'Проект;Свои на линии;Частники на линии;Всего на линии\n';
+    byProject.forEach(r => {
+      csv += `${r.project};${r.own};${r.hired};${r.total}\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {
+      type: 'text/csv;charset=utf-8'
+    }));
+    a.download = 'ГФД_маршруты_' + today.toISOString().slice(0, 10) + '.csv';
+    a.click();
+  };
+  const PBTN = (id, txt) => /*#__PURE__*/React.createElement("button", {
+    className: period === id ? 'primary' : '',
+    onClick: () => setPeriod(id)
+  }, txt);
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Сегодня · 14 мая 2026"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Главный дашборд"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► выручка / парк / клиенты в реальном времени")), /*#__PURE__*/React.createElement("div", {
+  }, "► маршруты на сегодня · ", dateStr)), /*#__PURE__*/React.createElement("div", {
     className: "actions"
-  }, /*#__PURE__*/React.createElement("button", null, "экспорт"), /*#__PURE__*/React.createElement("button", {
-    className: "primary"
-  }, "+ бронирование"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: download
+  }, "↓ Скачать отчёт"))), /*#__PURE__*/React.createElement("div", {
     className: "stats"
   }, /*#__PURE__*/React.createElement("div", {
     className: "stat"
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
-  }, "► выручка сегодня"), /*#__PURE__*/React.createElement("div", {
+  }, "► маршрутов сегодня"), /*#__PURE__*/React.createElement("div", {
     className: "v"
-  }, "€2 184"), /*#__PURE__*/React.createElement("div", {
+  }, routesToday), /*#__PURE__*/React.createElement("div", {
     className: "d"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "delta up"
-  }, "+18%"), /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "vs неделя назад"))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "l"
-  }, "► активные аренды"), /*#__PURE__*/React.createElement("div", {
-    className: "v"
-  }, "68 / 107"), /*#__PURE__*/React.createElement("div", {
-    className: "d"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "delta up"
-  }, "+4"), /*#__PURE__*/React.createElement("span", {
+    className: 'delta ' + (routesDelta >= 0 ? 'up' : 'down')
+  }, routesDelta >= 0 ? '+' : '', routesDelta), /*#__PURE__*/React.createElement("span", {
     className: "lab"
   }, "vs вчера"))), /*#__PURE__*/React.createElement("div", {
     className: "stat"
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
-  }, "► парк · загрузка"), /*#__PURE__*/React.createElement("div", {
+  }, "► ТС на линии"), /*#__PURE__*/React.createElement("div", {
     className: "v"
-  }, "63.5%"), /*#__PURE__*/React.createElement("div", {
+  }, totalOnLine), /*#__PURE__*/React.createElement("div", {
     className: "d"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "delta up"
-  }, "+2.1pp"), /*#__PURE__*/React.createElement("span", {
     className: "lab"
-  }, "7-дн"))), /*#__PURE__*/React.createElement("div", {
+  }, "свои + частники"))), /*#__PURE__*/React.createElement("div", {
     className: "stat"
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
-  }, "► NPS · 30 дней"), /*#__PURE__*/React.createElement("div", {
+  }, "► свои на линии"), /*#__PURE__*/React.createElement("div", {
     className: "v"
-  }, "+72"), /*#__PURE__*/React.createElement("div", {
+  }, ownOnLine.length), /*#__PURE__*/React.createElement("div", {
     className: "d"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "delta up"
-  }, "+5"), /*#__PURE__*/React.createElement("span", {
     className: "lab"
-  }, "vs прошлый период")))), /*#__PURE__*/React.createElement("div", {
+  }, "из ", own.length, " в парке"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► частники на линии"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, hiredOnLine.length), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "из ", hired.length, " привлечённых")))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Динамика маршрутов"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8
+    }
+  }, PBTN('day', 'день'), PBTN('week', 'неделя'), PBTN('month', 'месяц'))), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    style: {
+      width: '100%',
+      height: 210,
+      display: 'block'
+    },
+    preserveAspectRatio: "none"
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "rg",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: "var(--coral)",
+    stopOpacity: "0.35"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: "var(--coral)",
+    stopOpacity: "0"
+  }))), [0.25, 0.5, 0.75].map((g, i) => /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: P,
+    x2: W - P,
+    y1: P + g * (H - 2 * P),
+    y2: P + g * (H - 2 * P),
+    stroke: "var(--line)",
+    strokeWidth: "1"
+  })), area && /*#__PURE__*/React.createElement("path", {
+    d: area,
+    fill: "url(#rg)"
+  }), line && /*#__PURE__*/React.createElement("path", {
+    d: line,
+    fill: "none",
+    stroke: "var(--coral)",
+    strokeWidth: "2.5",
+    strokeLinejoin: "round",
+    strokeLinecap: "round"
+  }), n > 0 && /*#__PURE__*/React.createElement("circle", {
+    cx: xp(n - 1),
+    cy: yp(series[n - 1].v),
+    r: "4.5",
+    fill: "var(--coral)",
+    stroke: "var(--panel)",
+    strokeWidth: "2"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "util-legend",
+    style: {
+      marginTop: 6,
+      justifyContent: 'space-between',
+      color: 'var(--cream-3)',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 10.5
+    }
+  }, series.filter((_, i) => n <= 12 || i % Math.ceil(n / 12) === 0).map((s, i) => /*#__PURE__*/React.createElement("span", {
+    key: i
+  }, s.label))))), /*#__PURE__*/React.createElement("div", {
     className: "grid-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -1003,104 +1159,91 @@ function Dashboard({
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "Сегодняшние бронирования"), /*#__PURE__*/React.createElement("div", {
-    className: "m",
-    style: {
-      cursor: 'pointer'
-    },
-    onClick: () => setPage('book')
-  }, "все →")), /*#__PURE__*/React.createElement("div", {
+  }, "На линии по проектам · сегодня"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, totalOnLine, " ТС")), /*#__PURE__*/React.createElement("div", {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "ID"), /*#__PURE__*/React.createElement("th", null, "Клиент"), /*#__PURE__*/React.createElement("th", null, "Машина"), /*#__PURE__*/React.createElement("th", null, "Период"), /*#__PURE__*/React.createElement("th", null, "Сумма"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, BOOKINGS.slice(0, 6).map(b => /*#__PURE__*/React.createElement("tr", {
-    key: b.id
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Свои"), /*#__PURE__*/React.createElement("th", null, "Частники"), /*#__PURE__*/React.createElement("th", null, "Всего"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, byProject.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "id"
-  }, b.id)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "pri"
-  }, b.cust), /*#__PURE__*/React.createElement("span", {
-    className: "sec"
-  }, b.phone)), /*#__PURE__*/React.createElement("td", null, b.car), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "id"
-  }, b.from, " → ", b.to)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
+  }, r.project)), /*#__PURE__*/React.createElement("td", null, r.own), /*#__PURE__*/React.createElement("td", null, r.hired), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
     style: {
       color: 'var(--cream)'
     }
-  }, "€", b.total)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: 'pill ' + b.status
-  }, {
-    active: 'active',
-    pending: 'pending',
-    done: 'done',
-    cancelled: 'cancelled'
-  }[b.status])))))))), /*#__PURE__*/React.createElement("div", {
+  }, r.total)), /*#__PURE__*/React.createElement("td", {
+    style: {
+      width: 120
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 6,
+      borderRadius: 4,
+      background: 'var(--line)',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      width: r.total / maxProj * 100 + '%',
+      background: 'var(--coral)'
+    }
+  }))))))))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "Загрузка парка"), /*#__PURE__*/React.createElement("div", {
+  }, "Структура выхода на линию"), /*#__PURE__*/React.createElement("div", {
     className: "m"
-  }, FLEET.length, " авто")), /*#__PURE__*/React.createElement("div", {
+  }, "свои / частники")), /*#__PURE__*/React.createElement("div", {
     className: "b"
   }, /*#__PURE__*/React.createElement("div", {
     className: "util-bar"
   }, /*#__PURE__*/React.createElement("div", {
     className: "seg rented",
     style: {
-      width: '62%'
+      width: (totalOnLine ? ownOnLine.length / totalOnLine * 100 : 50) + '%'
     }
   }), /*#__PURE__*/React.createElement("div", {
     className: "seg avail",
     style: {
-      width: '30%'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "seg maint",
-    style: {
-      width: '8%'
+      width: (totalOnLine ? hiredOnLine.length / totalOnLine * 100 : 50) + '%'
     }
   })), /*#__PURE__*/React.createElement("div", {
     className: "util-legend"
-  }, /*#__PURE__*/React.createElement("span", null, "в аренде 67"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "свои ", ownOnLine.length), /*#__PURE__*/React.createElement("span", {
     className: "l2"
-  }, "свободно 32"), /*#__PURE__*/React.createElement("span", {
-    className: "l3"
-  }, "сервис 8")), /*#__PURE__*/React.createElement("div", {
+  }, "частники ", hiredOnLine.length)), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 18,
       paddingTop: 18,
       borderTop: '1px solid var(--line)'
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "util-legend",
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--cream-2)'
-    }
-  }, "► популярные сегодня")), [{
-    n: 'BMW Z4 cabrio',
-    v: '5 / 5 · all rented'
+  }, [{
+    n: 'Маршрутов сегодня',
+    v: routesToday
   }, {
-    n: 'Mini Cooper S Cabrio',
-    v: '4 / 5'
+    n: 'Своих ТС на линии',
+    v: ownOnLine.length + ' / ' + own.length
   }, {
-    n: 'VW Touran (family)',
-    v: '3 / 4'
+    n: 'Частников на линии',
+    v: hiredOnLine.length + ' / ' + hired.length
   }, {
-    n: 'Skoda Fabia (econom)',
-    v: '9 / 12'
+    n: 'Своих в ремонте',
+    v: own.filter(v => v.status === 'Ремонт' || v.status === 'Капремонт').length
+  }, {
+    n: 'Проектов активно',
+    v: byProject.filter(p => p.total > 0).length
   }].map((r, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '7px 0',
-      borderBottom: i < 3 ? '1px dashed var(--line)' : 'none',
+      padding: '8px 0',
+      borderBottom: i < 4 ? '1px dashed var(--line)' : 'none',
       fontSize: 13
     }
   }, /*#__PURE__*/React.createElement("span", {
@@ -1110,88 +1253,10 @@ function Dashboard({
   }, r.n), /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: "'JetBrains Mono', monospace",
-      fontSize: 11.5,
-      color: 'var(--cream-3)'
+      fontSize: 12,
+      color: 'var(--cream)'
     }
-  }, r.v))))))), /*#__PURE__*/React.createElement("div", {
-    className: "grid-2"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "t"
-  }, "Активные переписки · AI-помощник"), /*#__PURE__*/React.createElement("div", {
-    className: "m",
-    style: {
-      cursor: 'pointer'
-    },
-    onClick: () => setPage('convo')
-  }, "все →")), /*#__PURE__*/React.createElement("div", {
-    className: "b flush"
-  }, /*#__PURE__*/React.createElement("table", {
-    className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Клиент"), /*#__PURE__*/React.createElement("th", null, "Канал"), /*#__PURE__*/React.createElement("th", null, "Последнее сообщение"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, CONVOS.slice(0, 5).map(c => /*#__PURE__*/React.createElement("tr", {
-    key: c.id,
-    style: {
-      cursor: 'pointer'
-    },
-    onClick: () => setPage('convo')
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "pri"
-  }, c.name), /*#__PURE__*/React.createElement("span", {
-    className: "sec"
-  }, c.time)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "chan"
-  }, c.ch)), /*#__PURE__*/React.createElement("td", {
-    style: {
-      maxWidth: 280,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap'
-    }
-  }, c.last), /*#__PURE__*/React.createElement("td", null, c.status === 'ai' && /*#__PURE__*/React.createElement("span", {
-    className: "pill avail"
-  }, "AI"), c.status === 'human' && /*#__PURE__*/React.createElement("span", {
-    className: "pill pending"
-  }, "human"), c.status === 'done' && /*#__PURE__*/React.createElement("span", {
-    className: "pill done"
-  }, "done")))))))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "t"
-  }, "Источники данных"), /*#__PURE__*/React.createElement("div", {
-    className: "m",
-    style: {
-      cursor: 'pointer'
-    },
-    onClick: () => setPage('sync')
-  }, "все →")), /*#__PURE__*/React.createElement("div", {
-    className: "b flush"
-  }, SOURCES.slice(0, 5).map((s, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "sync-row",
-    style: {
-      borderBottom: i < 4 ? '1px solid var(--line)' : 'none'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ico"
-  }, s.ic), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "name"
-  }, s.name), /*#__PURE__*/React.createElement("div", {
-    className: "desc"
-  }, s.items)), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
-    className: "when"
-  }, /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: 'var(--green)',
-      fontFamily: 'inherit',
-      fontSize: 10,
-      letterSpacing: '.12em'
-    }
-  }, "● синхрон"), s.when)))))));
+  }, r.v))))))));
 }
 
 /* ----------------- BOOKINGS ----------------- */

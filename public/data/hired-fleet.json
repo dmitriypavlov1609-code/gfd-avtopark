@@ -1,0 +1,449 @@
+[
+ {
+  "plate": "Н367КА77",
+  "contractor": "ИП Титов Г.",
+  "phone": "+7976*******",
+  "registered": "26.06.2026",
+  "routesDone": 615,
+  "projects": [
+   "Озон"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 4500
+ },
+ {
+  "plate": "Н308НН77",
+  "contractor": "ИП Титов Г.",
+  "phone": "+7981*******",
+  "registered": "12.02.2026",
+  "routesDone": 412,
+  "projects": [
+   "Х5 Retail",
+   "ВкусВилл",
+   "Озон"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3200
+ },
+ {
+  "plate": "С850МЕ177",
+  "contractor": "ИП Егоров В.",
+  "phone": "+7993*******",
+  "registered": "25.02.2026",
+  "routesDone": 542,
+  "projects": [
+   "ВкусВилл",
+   "Лемана Про"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3100
+ },
+ {
+  "plate": "Т621КВ178",
+  "contractor": "ООО «ЧастникТранс»",
+  "phone": "+7951*******",
+  "registered": "09.05.2026",
+  "routesDone": 49,
+  "projects": [
+   "Х5 Retail",
+   "ВкусВилл",
+   "Самокат"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3000
+ },
+ {
+  "plate": "Т704ОТ797",
+  "contractor": "ИП Кузнецов Д.М.",
+  "phone": "+7981*******",
+  "registered": "08.01.2026",
+  "routesDone": 578,
+  "projects": [
+   "ВкусВилл"
+  ],
+  "status": "soon",
+  "onLine": false,
+  "rate": 4600
+ },
+ {
+  "plate": "В440РР777",
+  "contractor": "ИП Морозов К.",
+  "phone": "+7917*******",
+  "registered": "08.02.2026",
+  "routesDone": 281,
+  "projects": [
+   "Озон"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3200
+ },
+ {
+  "plate": "Н805ВВ797",
+  "contractor": "ИП Волков Р.",
+  "phone": "+7923*******",
+  "registered": "19.04.2026",
+  "routesDone": 176,
+  "projects": [
+   "Магнит",
+   "Озон",
+   "Лемана Про"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 4600
+ },
+ {
+  "plate": "У481ТО99",
+  "contractor": "ИП Волков Р.",
+  "phone": "+7969*******",
+  "registered": "14.01.2026",
+  "routesDone": 536,
+  "projects": [
+   "Х5 Retail",
+   "Магнит",
+   "ВкусВилл"
+  ],
+  "status": "active",
+  "onLine": false,
+  "rate": 2600
+ },
+ {
+  "plate": "Е461ХВ797",
+  "contractor": "ИП Титов Г.",
+  "phone": "+7975*******",
+  "registered": "01.05.2026",
+  "routesDone": 90,
+  "projects": [
+   "Самокат"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 2400
+ },
+ {
+  "plate": "О696НВ197",
+  "contractor": "ИП Кузнецов Д.М.",
+  "phone": "+7979*******",
+  "registered": "05.06.2026",
+  "routesDone": 48,
+  "projects": [
+   "Озон",
+   "ВкусВилл",
+   "Х5 Retail"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 4400
+ },
+ {
+  "plate": "К414СВ178",
+  "contractor": "ИП Волков Р.",
+  "phone": "+7973*******",
+  "registered": "29.04.2026",
+  "routesDone": 40,
+  "projects": [
+   "Магнит",
+   "ВкусВилл"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3400
+ },
+ {
+  "plate": "С953СР199",
+  "contractor": "ИП Егоров В.",
+  "phone": "+7920*******",
+  "registered": "03.06.2026",
+  "routesDone": 589,
+  "projects": [
+   "Озон",
+   "Магнит"
+  ],
+  "status": "active",
+  "onLine": false,
+  "rate": 3300
+ },
+ {
+  "plate": "С405АВ99",
+  "contractor": "ИП Морозов К.",
+  "phone": "+7985*******",
+  "registered": "26.07.2026",
+  "routesDone": 411,
+  "projects": [
+   "Самокат",
+   "Х5 Retail",
+   "ВкусВилл"
+  ],
+  "status": "end",
+  "onLine": false,
+  "rate": 4400
+ },
+ {
+  "plate": "Х094УО777",
+  "contractor": "ООО «ЧастникТранс»",
+  "phone": "+7936*******",
+  "registered": "20.08.2026",
+  "routesDone": 201,
+  "projects": [
+   "Озон",
+   "Х5 Retail"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3000
+ },
+ {
+  "plate": "В626АК197",
+  "contractor": "ИП Егоров В.",
+  "phone": "+7939*******",
+  "registered": "26.08.2026",
+  "routesDone": 297,
+  "projects": [
+   "Лемана Про"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 4500
+ },
+ {
+  "plate": "К834НА197",
+  "contractor": "ИП Волков Р.",
+  "phone": "+7977*******",
+  "registered": "10.04.2026",
+  "routesDone": 535,
+  "projects": [
+   "Лемана Про",
+   "Х5 Retail",
+   "Магнит"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3200
+ },
+ {
+  "plate": "С077КС99",
+  "contractor": "ИП Волков Р.",
+  "phone": "+7931*******",
+  "registered": "26.05.2026",
+  "routesDone": 352,
+  "projects": [
+   "Озон"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3700
+ },
+ {
+  "plate": "В860КК197",
+  "contractor": "ООО «ЧастникТранс»",
+  "phone": "+7974*******",
+  "registered": "10.01.2026",
+  "routesDone": 319,
+  "projects": [
+   "Самокат"
+  ],
+  "status": "soon",
+  "onLine": true,
+  "rate": 3900
+ },
+ {
+  "plate": "М151УТ199",
+  "contractor": "ИП Орлов В.",
+  "phone": "+7963*******",
+  "registered": "18.05.2026",
+  "routesDone": 76,
+  "projects": [
+   "Озон",
+   "Магнит",
+   "Самокат"
+  ],
+  "status": "soon",
+  "onLine": true,
+  "rate": 3400
+ },
+ {
+  "plate": "Х583ЕВ177",
+  "contractor": "ИП Егоров В.",
+  "phone": "+7922*******",
+  "registered": "02.02.2026",
+  "routesDone": 593,
+  "projects": [
+   "Самокат",
+   "Лемана Про",
+   "Озон"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 2400
+ },
+ {
+  "plate": "Т675ХТ197",
+  "contractor": "ИП Титов Г.",
+  "phone": "+7922*******",
+  "registered": "08.08.2026",
+  "routesDone": 442,
+  "projects": [
+   "Озон",
+   "ВкусВилл",
+   "Лемана Про"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 2600
+ },
+ {
+  "plate": "М872ОС777",
+  "contractor": "ИП Орлов В.",
+  "phone": "+7959*******",
+  "registered": "17.09.2026",
+  "routesDone": 530,
+  "projects": [
+   "Х5 Retail",
+   "Магнит"
+  ],
+  "status": "end",
+  "onLine": false,
+  "rate": 4000
+ },
+ {
+  "plate": "У761СУ99",
+  "contractor": "ООО «ЧастникТранс»",
+  "phone": "+7990*******",
+  "registered": "14.07.2026",
+  "routesDone": 389,
+  "projects": [
+   "Х5 Retail",
+   "Самокат"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 4300
+ },
+ {
+  "plate": "Т939ХУ797",
+  "contractor": "ИП Кузнецов Д.М.",
+  "phone": "+7967*******",
+  "registered": "08.05.2026",
+  "routesDone": 537,
+  "projects": [
+   "Озон",
+   "ВкусВилл",
+   "Самокат"
+  ],
+  "status": "soon",
+  "onLine": true,
+  "rate": 3500
+ },
+ {
+  "plate": "В826ХЕ177",
+  "contractor": "ИП Кузнецов Д.М.",
+  "phone": "+7963*******",
+  "registered": "24.03.2026",
+  "routesDone": 601,
+  "projects": [
+   "Лемана Про"
+  ],
+  "status": "active",
+  "onLine": false,
+  "rate": 2800
+ },
+ {
+  "plate": "Т791ТХ177",
+  "contractor": "ООО «ЧастникТранс»",
+  "phone": "+7945*******",
+  "registered": "29.05.2026",
+  "routesDone": 349,
+  "projects": [
+   "Самокат"
+  ],
+  "status": "soon",
+  "onLine": true,
+  "rate": 2900
+ },
+ {
+  "plate": "Е327НВ99",
+  "contractor": "ИП Кузнецов Д.М.",
+  "phone": "+7959*******",
+  "registered": "29.03.2026",
+  "routesDone": 508,
+  "projects": [
+   "Магнит"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 3000
+ },
+ {
+  "plate": "У977ЕН777",
+  "contractor": "ИП Орлов В.",
+  "phone": "+7930*******",
+  "registered": "28.05.2026",
+  "routesDone": 239,
+  "projects": [
+   "Озон",
+   "Самокат",
+   "ВкусВилл"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 2700
+ },
+ {
+  "plate": "Р206НС178",
+  "contractor": "ИП Волков Р.",
+  "phone": "+7932*******",
+  "registered": "06.01.2026",
+  "routesDone": 318,
+  "projects": [
+   "Лемана Про"
+  ],
+  "status": "end",
+  "onLine": false,
+  "rate": 3500
+ },
+ {
+  "plate": "Е473ТУ797",
+  "contractor": "ИП Титов Г.",
+  "phone": "+7974*******",
+  "registered": "30.08.2026",
+  "routesDone": 443,
+  "projects": [
+   "Самокат"
+  ],
+  "status": "soon",
+  "onLine": true,
+  "rate": 4400
+ },
+ {
+  "plate": "О262ТА197",
+  "contractor": "ИП Орлов В.",
+  "phone": "+7955*******",
+  "registered": "06.06.2026",
+  "routesDone": 122,
+  "projects": [
+   "Озон"
+  ],
+  "status": "active",
+  "onLine": true,
+  "rate": 2400
+ },
+ {
+  "plate": "Р382АН177",
+  "contractor": "ИП Титов Г.",
+  "phone": "+7988*******",
+  "registered": "16.01.2026",
+  "routesDone": 26,
+  "projects": [
+   "ВкусВилл",
+   "Лемана Про"
+  ],
+  "status": "active",
+  "onLine": false,
+  "rate": 3700
+ }
+]
