@@ -11,643 +11,54 @@ const KEY_STORAGE = 'aboba_claude_key';
 /* DATA — реалистичные моковые                                 */
 /* ============================================================ */
 
-const FLEET = [{
-  id: 'V-001',
-  model: 'BMW Z4 sDrive20i',
-  cat: 'cabrio',
-  plate: 'BG 0421-XY',
-  km: 42830,
-  status: 'rented',
-  next: '17·05',
-  price: 65
-}, {
-  id: 'V-002',
-  model: 'Mini Cooper S Cabrio',
-  cat: 'cabrio',
-  plate: 'BG 1144-OG',
-  km: 38120,
-  status: 'avail',
-  next: '—',
-  price: 58
-}, {
-  id: 'V-003',
-  model: 'BMW i3',
-  cat: 'electric',
-  plate: 'BG 9087-AB',
-  km: 25400,
-  status: 'rented',
-  next: '19·05',
-  price: 24
-}, {
-  id: 'V-004',
-  model: 'BMW X5',
-  cat: 'suv',
-  plate: 'BG 5512-DK',
-  km: 67200,
-  status: 'rented',
-  next: '22·05',
-  price: 90
-}, {
-  id: 'V-005',
-  model: 'VW Touran',
-  cat: 'minivan',
-  plate: 'BG 3309-QM',
-  km: 81500,
-  status: 'avail',
-  next: '—',
-  price: 38
-}, {
-  id: 'V-006',
-  model: 'Skoda Karoq',
-  cat: 'suv',
-  plate: 'BG 7748-NS',
-  km: 54300,
-  status: 'maint',
-  next: 'service 16·05',
-  price: 34
-}, {
-  id: 'V-007',
-  model: 'VW UP!',
-  cat: 'mini',
-  plate: 'BG 4421-AA',
-  km: 96400,
-  status: 'avail',
-  next: '—',
-  price: 18
-}, {
-  id: 'V-008',
-  model: 'Skoda Fabia',
-  cat: 'compact',
-  plate: 'BG 0091-VB',
-  km: 71200,
-  status: 'rented',
-  next: '15·05',
-  price: 20
-}, {
-  id: 'V-009',
-  model: 'Harley Sportster S',
-  cat: 'moto',
-  plate: 'BG MOT-12',
-  km: 18200,
-  status: 'avail',
-  next: '—',
-  price: 95
-}, {
-  id: 'V-010',
-  model: 'Piaggio MP3 400',
-  cat: 'moto',
-  plate: 'BG MOT-08',
-  km: 24800,
-  status: 'rented',
-  next: '14·05',
-  price: 45
-}, {
-  id: 'V-011',
-  model: 'BMW 320d',
-  cat: 'sedan',
-  plate: 'BG 2233-FF',
-  km: 52100,
-  status: 'avail',
-  next: '—',
-  price: 39
-}, {
-  id: 'V-012',
-  model: 'Hyundai Tucson',
-  cat: 'suv',
-  plate: 'BG 6677-SS',
-  km: 48900,
-  status: 'rented',
-  next: '16·05',
-  price: 36
-}, {
-  id: 'V-013',
-  model: 'Seat Ibiza',
-  cat: 'compact',
-  plate: 'BG 8800-PR',
-  km: 62400,
-  status: 'avail',
-  next: '—',
-  price: 22
-}, {
-  id: 'V-014',
-  model: 'BMW 1 Series',
-  cat: 'compact',
-  plate: 'BG 1212-LK',
-  km: 39800,
-  status: 'rented',
-  next: '21·05',
-  price: 46
-}, {
-  id: 'V-015',
-  model: 'Smart Fortwo Cabrio',
-  cat: 'mini',
-  plate: 'BG 4040-MN',
-  km: 34200,
-  status: 'avail',
-  next: '—',
-  price: 30
-}, {
-  id: 'V-016',
-  model: 'VW Transporter',
-  cat: 'van',
-  plate: 'BG 5555-TT',
-  km: 104800,
-  status: 'rented',
-  next: '24·05',
-  price: 78
-}, {
-  id: 'V-017',
-  model: 'Skoda Kamiq',
-  cat: 'compact',
-  plate: 'BG 9911-WX',
-  km: 28700,
-  status: 'avail',
-  next: '—',
-  price: 32
-}, {
-  id: 'V-018',
-  model: 'VW Sharan',
-  cat: 'minivan',
-  plate: 'BG 3434-DD',
-  km: 74500,
-  status: 'maint',
-  next: 'service 18·05',
-  price: 42
-}, {
-  id: 'V-019',
-  model: 'Hyundai i20',
-  cat: 'compact',
-  plate: 'BG 7070-RR',
-  km: 58300,
-  status: 'avail',
-  next: '—',
-  price: 20
-}, {
-  id: 'V-020',
-  model: 'VW Passat B8',
-  cat: 'sedan',
-  plate: 'BG 1818-LL',
-  km: 81000,
-  status: 'rented',
-  next: '13·05',
-  price: 48
-}];
-const BOOKINGS = [{
-  id: 'B-2026-1042',
-  cust: 'Иван П.',
-  phone: '+7 925 ***-31-87',
-  car: 'BMW Z4 sDrive20i',
-  from: '12·05·26',
-  to: '17·05·26',
-  status: 'active',
-  total: 325,
-  paid: 325,
-  ch: 'whatsapp',
-  lang: 'ru',
-  src: 'IG DM'
-}, {
-  id: 'B-2026-1041',
-  cust: 'Marko D.',
-  phone: '+381 64 ***-22-04',
-  car: 'BMW i3',
-  from: '12·05·26',
-  to: '19·05·26',
-  status: 'active',
-  total: 168,
-  paid: 168,
-  ch: 'site',
-  lang: 'sr',
-  src: 'organic'
-}, {
-  id: 'B-2026-1040',
-  cust: 'Анна К.',
-  phone: '+7 916 ***-08-71',
-  car: 'VW Touran',
-  from: '14·05·26',
-  to: '21·05·26',
-  status: 'pending',
-  total: 266,
-  paid: 80,
-  ch: 'whatsapp',
-  lang: 'ru',
-  src: 'IG DM'
-}, {
-  id: 'B-2026-1039',
-  cust: 'James W.',
-  phone: '+44 7700 ***44',
-  car: 'BMW X5',
-  from: '13·05·26',
-  to: '22·05·26',
-  status: 'active',
-  total: 810,
-  paid: 810,
-  ch: 'tg',
-  lang: 'en',
-  src: 'Discover Cars'
-}, {
-  id: 'B-2026-1038',
-  cust: 'Дмитрий В.',
-  phone: '+7 968 ***-92-12',
-  car: 'Piaggio MP3 400',
-  from: '11·05·26',
-  to: '14·05·26',
-  status: 'active',
-  total: 135,
-  paid: 135,
-  ch: 'site',
-  lang: 'ru',
-  src: 'IG bio'
-}, {
-  id: 'B-2026-1037',
-  cust: 'Stefan J.',
-  phone: '+381 60 ***-71-49',
-  car: 'Skoda Fabia',
-  from: '09·05·26',
-  to: '15·05·26',
-  status: 'active',
-  total: 120,
-  paid: 120,
-  ch: 'site',
-  lang: 'sr',
-  src: 'Yandex Maps'
-}, {
-  id: 'B-2026-1036',
-  cust: 'Сергей М.',
-  phone: '+7 905 ***-04-19',
-  car: 'BMW 1 Series',
-  from: '14·05·26',
-  to: '21·05·26',
-  status: 'pending',
-  total: 322,
-  paid: 0,
-  ch: 'whatsapp',
-  lang: 'ru',
-  src: 'Hotel referral'
-}, {
-  id: 'B-2026-1035',
-  cust: 'Mila R.',
-  phone: '+381 65 ***-12-90',
-  car: 'VW Passat B8',
-  from: '10·05·26',
-  to: '13·05·26',
-  status: 'done',
-  total: 144,
-  paid: 144,
-  ch: 'tg',
-  lang: 'sr',
-  src: 'organic'
-}, {
-  id: 'B-2026-1034',
-  cust: 'Игорь Л.',
-  phone: '+7 902 ***-71-33',
-  car: 'BMW Z4 sDrive20i',
-  from: '05·05·26',
-  to: '09·05·26',
-  status: 'done',
-  total: 260,
-  paid: 260,
-  ch: 'whatsapp',
-  lang: 'ru',
-  src: 'IG DM'
-}, {
-  id: 'B-2026-1033',
-  cust: 'Никита Б.',
-  phone: '+7 925 ***-66-04',
-  car: 'Skoda Fabia',
-  from: '08·05·26',
-  to: '11·05·26',
-  status: 'cancelled',
-  total: 60,
-  paid: 0,
-  ch: 'site',
-  lang: 'ru',
-  src: 'organic'
-}];
-const CUSTOMERS = [{
-  id: 'C-1024',
-  name: 'Иван Платонов',
-  phone: '+7 925 ***-31-87',
-  lang: 'ru',
-  since: '2024·11',
-  trips: 7,
-  spent: 1820,
-  cashback: 182
-}, {
-  id: 'C-1023',
-  name: 'Marko Đorđević',
-  phone: '+381 64 ***-22-04',
-  lang: 'sr',
-  since: '2024·07',
-  trips: 12,
-  spent: 3140,
-  cashback: 314
-}, {
-  id: 'C-1022',
-  name: 'Анна Кравцова',
-  phone: '+7 916 ***-08-71',
-  lang: 'ru',
-  since: '2025·01',
-  trips: 4,
-  spent: 980,
-  cashback: 98
-}, {
-  id: 'C-1021',
-  name: 'James Whittaker',
-  phone: '+44 7700 ***44',
-  lang: 'en',
-  since: '2025·03',
-  trips: 2,
-  spent: 1260,
-  cashback: 126
-}, {
-  id: 'C-1020',
-  name: 'Дмитрий Воронов',
-  phone: '+7 968 ***-92-12',
-  lang: 'ru',
-  since: '2024·02',
-  trips: 9,
-  spent: 1810,
-  cashback: 181
-}, {
-  id: 'C-1019',
-  name: 'Stefan Jovanović',
-  phone: '+381 60 ***-71-49',
-  lang: 'sr',
-  since: '2023·09',
-  trips: 18,
-  spent: 4290,
-  cashback: 429
-}, {
-  id: 'C-1018',
-  name: 'Сергей Мирошин',
-  phone: '+7 905 ***-04-19',
-  lang: 'ru',
-  since: '2025·04',
-  trips: 1,
-  spent: 322,
-  cashback: 32
-}, {
-  id: 'C-1017',
-  name: 'Mila Radović',
-  phone: '+381 65 ***-12-90',
-  lang: 'sr',
-  since: '2024·06',
-  trips: 6,
-  spent: 1480,
-  cashback: 148
-}];
-const CONVOS = [{
-  id: 'CV-1',
-  name: 'Иван Платонов',
-  last: 'Хорошо, тогда жду подтверждение на WhatsApp',
-  time: '12:42',
-  unread: 0,
-  ch: 'whatsapp',
-  lang: 'ru',
-  status: 'ai'
-}, {
-  id: 'CV-2',
-  name: 'Marko Đorđević',
-  last: 'Ok, dolazim u 14:30 na Square Nine',
-  time: '12:18',
-  unread: 0,
-  ch: 'instagram',
-  lang: 'sr',
-  status: 'ai'
-}, {
-  id: 'CV-3',
-  name: 'Анна Кравцова',
-  last: 'А можно с детским креслом?',
-  time: '11:54',
-  unread: 2,
-  ch: 'whatsapp',
-  lang: 'ru',
-  status: 'human'
-}, {
-  id: 'CV-4',
-  name: 'James Whittaker',
-  last: 'Thanks! See you on Thursday',
-  time: '11:02',
-  unread: 0,
-  ch: 'telegram',
-  lang: 'en',
-  status: 'done'
-}, {
-  id: 'CV-5',
-  name: 'Дмитрий Воронов',
-  last: 'Шлем какого размера? У меня L',
-  time: '10:48',
-  unread: 1,
-  ch: 'whatsapp',
-  lang: 'ru',
-  status: 'ai'
-}, {
-  id: 'CV-6',
-  name: 'Stefan Jovanović',
-  last: 'Treba mi auto za 3 nedelje, BMW po mogućnosti',
-  time: '10:22',
-  unread: 0,
-  ch: 'telegram',
-  lang: 'sr',
-  status: 'ai'
-}, {
-  id: 'CV-7',
-  name: 'Mila Radović',
-  last: 'Hvala, fakturu sam dobila',
-  time: '09:55',
-  unread: 0,
-  ch: 'whatsapp',
-  lang: 'sr',
-  status: 'done'
-}, {
-  id: 'CV-8',
-  name: '+7 968 ***-44-21',
-  last: 'Здравствуйте, у вас есть Z4 на длинные?',
-  time: '09:18',
-  unread: 3,
-  ch: 'instagram',
-  lang: 'ru',
-  status: 'human'
-}, {
-  id: 'CV-9',
-  name: 'Сергей Мирошин',
-  last: 'Ок, прилечу 14 числа',
-  time: 'вчера',
-  unread: 0,
-  ch: 'whatsapp',
-  lang: 'ru',
-  status: 'done'
-}, {
-  id: 'CV-10',
-  name: '+44 7912 ***-09',
-  last: 'How do I extend my rental?',
-  time: 'вчера',
-  unread: 1,
-  ch: 'site-chat',
-  lang: 'en',
-  status: 'ai'
-}];
-const CONVO_MESSAGES = {
-  'CV-1': [{
-    who: 'bot',
-    meta: 'AI помощник · ru',
-    text: 'Здравствуйте, Иван! Z4 sDrive20i на 12-17 мая — €260 за 4 дня + €40 cross-border Черногория. Подвезти на BEG или в отель?'
-  }, {
-    who: 'user',
-    text: 'В отель, Square Nine, около 14:30'
-  }, {
-    who: 'bot',
-    meta: 'AI помощник',
-    text: 'Зафиксировал: Z4, 12 мая, 14:30, Square Nine. Cashback 10% (€26) пойдёт на следующую поездку. Высылаю подтверждение?'
-  }, {
-    who: 'user',
-    text: 'Хорошо, тогда жду подтверждение на WhatsApp'
-  }],
-  'CV-2': [{
-    who: 'bot',
-    meta: 'AI помощник · sr',
-    text: 'Marko, BMW i3 dostupan 12-19 maj. €168 ukupno (7 dana × €24), bez depozita. Cashback 10% (€16,80) na sledeću rezervaciju. Da potvrdim?'
-  }, {
-    who: 'user',
-    text: 'Da, ali treba mi i punjač na noć'
-  }, {
-    who: 'bot',
-    meta: 'AI помощник',
-    text: 'Mobilni 22 kW punjač — €8/dan. Ukupno €224. Predaja u Zemunu ili na aerodromu?'
-  }, {
-    who: 'user',
-    text: 'Ok, dolazim u 14:30 na Square Nine'
-  }],
-  'CV-3': [{
-    who: 'bot',
-    meta: 'AI помощник · ru',
-    text: 'Анна, VW Touran на 14-21 мая — €266 за 7 дней. Семейная машина, 7 мест, багажник большой.'
-  }, {
-    who: 'user',
-    text: 'А можно с детским креслом?'
-  }],
-  'CV-5': [{
-    who: 'bot',
-    meta: 'AI помощник · ru',
-    text: 'Дмитрий, Piaggio MP3 на выходные — €135 за 3 дня. Шлем и куртка в комплекте. Категория B водительского права подходит (3 колеса).'
-  }, {
-    who: 'user',
-    text: 'Шлем какого размера? У меня L'
-  }]
-};
-const SOURCES = [{
-  ic: 'Wz',
-  name: 'Wazzup24 · WhatsApp Business',
-  desc: 'Сообщения, статусы, шаблоны',
-  when: '2 мин назад',
-  items: '24 чата · 47 сообщений'
-}, {
-  ic: 'IG',
-  name: 'Instagram Direct',
-  desc: 'DM via Meta Business',
-  when: '5 мин назад',
-  items: '12 чатов'
-}, {
-  ic: 'TG',
-  name: 'Telegram Bot',
-  desc: '@gfd_belgrade_bot',
-  when: '1 мин назад',
-  items: '8 чатов'
-}, {
-  ic: 'XL',
-  name: 'Catalog Sync · Google Sheets',
-  desc: 'Парк, цены, доступность',
-  when: '12 мин назад',
-  items: '107 авто'
-}, {
-  ic: 'Yn',
-  name: 'Yandex Maps · отзывы',
-  desc: 'Reviews + answers',
-  when: '1 ч назад',
-  items: '342 отзыва'
-}, {
-  ic: 'TG',
-  name: 'TG Channel · посты',
-  desc: '@gfd_rent — 8 200 подписчиков',
-  when: '4 ч назад',
-  items: '164 поста'
-}, {
-  ic: 'DR',
-  name: 'Google Drive · документы',
-  desc: 'Договоры, страховые',
-  when: 'вчера 18:42',
-  items: '1 248 файлов'
-}];
 const INTEGRATIONS = [{
   ic: 'C',
   name: 'Anthropic Claude',
-  desc: 'AI-помощник, content factory, ranker',
+  desc: 'AI-агент автопарка (tool use, отчёты)',
   status: 'connected',
   kind: 'core'
 }, {
-  ic: 'Wz',
-  name: 'Wazzup24',
-  desc: 'WhatsApp Business + унифицированный API',
-  status: 'connected',
-  kind: 'channel'
-}, {
-  ic: 'IG',
-  name: 'Meta Business · Instagram',
-  desc: 'Direct messages, content publish',
-  status: 'connected',
-  kind: 'channel'
-}, {
-  ic: 'TG',
-  name: 'Telegram Bot API',
-  desc: '@gfd_belgrade_bot',
-  status: 'connected',
-  kind: 'channel'
-}, {
-  ic: 'Yn',
-  name: 'Yandex Maps Business',
-  desc: 'Reviews + бизнес-карточка',
-  status: 'connected',
+  ic: 'GS',
+  name: 'Google Sheets · Собственный парк',
+  desc: 'ТС, статусы, проекты, пробег',
+  status: 'planned',
   kind: 'data'
 }, {
   ic: 'GS',
-  name: 'Google Sheets · Catalog',
-  desc: 'Машины, цены, расписание',
-  status: 'connected',
+  name: 'Google Sheets · Привлечённый парк',
+  desc: 'частники, регистрация, маршруты',
+  status: 'planned',
   kind: 'data'
 }, {
-  ic: '$',
-  name: 'Stripe',
-  desc: 'Платежи, чеки, refunds',
-  status: 'pending',
-  kind: 'payment'
-}, {
-  ic: 'TT',
-  name: 'TikTok Content Posting',
-  desc: 'Auto-publish reels',
-  status: 'review',
-  kind: 'channel'
-}, {
-  ic: 'YT',
-  name: 'YouTube Shorts',
-  desc: 'Auto-publish vertical video',
-  status: 'disconnected',
-  kind: 'channel'
-}, {
-  ic: 'DC',
-  name: 'Discover Cars · API',
-  desc: 'Aggregator listings sync',
+  ic: 'GS',
+  name: 'Google Sheets · Магазины',
+  desc: 'маршруты по точкам, «в срок %»',
   status: 'planned',
+  kind: 'data'
+}, {
+  ic: 'GS',
+  name: 'Google Sheets · Кадры',
+  desc: 'кандидаты, проекты, даты выхода',
+  status: 'planned',
+  kind: 'data'
+}, {
+  ic: 'TG',
+  name: 'Telegram Bot · Отчёты',
+  desc: '@otchetRZ_bot — отправка отчётов руководству',
+  status: 'planned',
+  kind: 'channel'
+}, {
+  ic: 'XL',
+  name: 'Автосинхронизация · VPS',
+  desc: 'cron + сервис-аккаунт (как в ОБЕ2)',
+  status: 'pending',
   kind: 'data'
 }];
 
 /* ============================================================ */
 /* CLAUDE STREAM                                                */
 /* ============================================================ */
-const SYSTEM = `Ты — AI-помощник ГФД Rent A Car (Белград). Отвечаешь на языке пользователя (RU / SR / EN), кратко (2-3 абзаца), тёплым деловым тоном.
-
-Каталог (€/день): BMW Z4 cabrio 65, BMW i3 24, Mini Cabrio 58, BMW X5 90, VW Touran 38, Skoda Karoq 34, Skoda Fabia 20, VW UP! 18, Harley Sportster S 95 (только выходные), Piaggio MP3 400 45, BMW 320d 39, Hyundai Tucson 36.
-
-Политика: cashback 10% от каждой поездки (на следующую). Long-term ≥1 нед — без депозита. Cross-border: Черногория €40, Хорватия €50, БиГ €40. Доставка в BEG и отели Белграда бесплатно. Принимаем cash + карты Mir/Visa/MC.`;
+const SYSTEM = `Ты — внутренний AI-помощник автопарка ГФД. Отвечаешь по-русски, кратко и по делу. Помогаешь менеджерам с данными по собственному парку, частникам, магазинам, маршрутам, статистике и кадрам.`;
 async function* claudeStream({
   system,
   messages,
@@ -2373,19 +1784,19 @@ function Settings() {
     className: "b"
   }, /*#__PURE__*/React.createElement("div", {
     className: "field"
-  }, /*#__PURE__*/React.createElement("label", null, "чат-модель (диалоги с клиентами)"), /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("label", null, "модель AI-агента (tool use)"), /*#__PURE__*/React.createElement("input", {
+    value: "claude-sonnet-5",
+    readOnly: true
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "help"
+  }, "Работает с данными автопарка через инструменты, готовит отчёты.")), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "модель быстрых сводок"), /*#__PURE__*/React.createElement("input", {
     value: "claude-haiku-4-5",
     readOnly: true
   }), /*#__PURE__*/React.createElement("div", {
     className: "help"
-  }, "Быстрая, дешёвая, оптимальна для чатов на 3 языках.")), /*#__PURE__*/React.createElement("div", {
-    className: "field"
-  }, /*#__PURE__*/React.createElement("label", null, "контент-модель (генерация постов)"), /*#__PURE__*/React.createElement("input", {
-    value: "claude-sonnet-4-6",
-    readOnly: true
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "help"
-  }, "Используется в content factory и для генерации описаний машин."))))), /*#__PURE__*/React.createElement("div", {
+  }, "Быстрые ответы и короткие сводки по парку и маршрутам."))))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 14
     }
@@ -2428,475 +1839,304 @@ function Settings() {
 /* ============================================================ */
 /* AI ASSISTANT WITH TOOL USE                                   */
 /* ============================================================ */
-const SYSTEM_ASSISTANT = `Ты — внутренний AI-помощник менеджеров ГФД Rent A Car в Белграде. Ты работаешь как агент с набором инструментов для работы с CRM.
+const GFD = {
+  own: [],
+  hired: [],
+  stores: [],
+  stats: [],
+  candidates: [],
+  routes: []
+};
+async function loadGFD() {
+  const j = async u => {
+    try {
+      return await (await fetch(u + '?t=' + Date.now())).json();
+    } catch (e) {
+      return null;
+    }
+  };
+  const [o, h, s, st, c, r] = await Promise.all([j('/data/own-fleet.json'), j('/data/hired-fleet.json'), j('/data/stores.json'), j('/data/stats.json'), j('/data/candidates.json'), j('/data/routes.json')]);
+  if (o) GFD.own = o;
+  if (h) GFD.hired = h;
+  if (s) GFD.stores = s;
+  if (st) GFD.stats = st.rows || [];
+  if (c) GFD.candidates = c;
+  if (r) GFD.routes = r.daily || [];
+}
+const SYSTEM_ASSISTANT = `Ты — внутренний AI-помощник менеджеров автопарка ГФД. Работаешь как агент с набором инструментов для работы с системой учёта.
 
 ПРИНЦИПЫ:
-- Когда спрашивают про данные (бронирования, парк, клиенты, метрики) — обязательно вызывай нужный инструмент, не отвечай по памяти.
-- Если задача требует нескольких шагов — вызывай инструменты последовательно (например: сначала query_customers чтобы найти сегмент, потом send_promo чтобы отправить рассылку).
-- В финальном ответе кратко резюмируй что сделал и какой результат. По-русски, по делу, без воды.
-- Числа всегда из инструментов, никогда не выдумывай.
+- Когда спрашивают про данные (собственный парк, частники, магазины, маршруты, статистика, кадры) — обязательно вызывай нужный инструмент, не отвечай по памяти.
+- Если задача многошаговая — вызывай инструменты последовательно.
+- В финальном ответе кратко резюмируй результат. По-русски, по делу, без воды.
+- Числа всегда бери из инструментов, никогда не выдумывай.
 - Если данных не хватает — задай ОДИН уточняющий вопрос.
 
-ПАРК: 107 автомобилей в Белграде (BMW, Mini, VW, Skoda, Hyundai, Harley, Piaggio). Long-term без депозита от 1 нед, cashback 10% автоматически.`;
+КОНТЕКСТ: автопарк ГФД возит маршруты для магазинов (Лемана Про, Магнит, Х5, Озон, ВкусВилл, Самокат). Есть собственные ТС (газели, ларгусы) и привлечённые частники. Кадры — кандидаты-водители на проекты.`;
 const TOOLS = [{
-  name: 'query_bookings',
-  description: 'Filter and return bookings. Use for questions about specific bookings, recent activity, counts by status, etc.',
+  name: 'query_own_fleet',
+  description: 'Filter own vehicles (собственный автопарк). Use for own cars, on-line count, repairs, by project.',
   input_schema: {
     type: 'object',
     properties: {
       status: {
         type: 'string',
-        enum: ['active', 'pending', 'done', 'cancelled', 'all'],
-        description: 'Filter by booking status'
+        enum: ['На линии', 'Ремонт', 'Капремонт', 'Резерв', 'all']
       },
-      car_model: {
+      kind: {
         type: 'string',
-        description: 'Partial car model match (e.g. "BMW Z4")'
+        enum: ['Газель', 'Ларгус']
       },
-      customer_lang: {
+      project: {
         type: 'string',
-        enum: ['ru', 'sr', 'en'],
-        description: 'Filter by customer language'
-      },
-      min_total: {
-        type: 'number',
-        description: 'Minimum booking total in EUR'
+        description: 'Partial project name'
       }
     }
   }
 }, {
-  name: 'query_fleet',
-  description: 'Filter cars in fleet. Use for availability, utilization, maintenance scheduling questions.',
+  name: 'query_hired',
+  description: 'Filter contractors (привлечённый парк / частники): registration, routes done, projects, who is on line.',
   input_schema: {
     type: 'object',
     properties: {
       status: {
         type: 'string',
-        enum: ['rented', 'avail', 'maint', 'all']
+        enum: ['active', 'soon', 'end', 'all']
       },
-      category: {
-        type: 'string',
-        enum: ['cabrio', 'suv', 'sedan', 'compact', 'mini', 'electric', 'moto', 'minivan', 'van']
+      on_line: {
+        type: 'boolean'
       },
-      model: {
-        type: 'string',
-        description: 'Partial model name'
+      project: {
+        type: 'string'
       }
     }
   }
 }, {
-  name: 'query_customers',
-  description: 'Filter customers. Use for segmentation, VIP identification, language-based targeting.',
+  name: 'query_stores',
+  description: 'Filter stores (магазины): routes per store today/month, assigned vehicles, on-time %.',
   input_schema: {
     type: 'object',
     properties: {
-      lang: {
+      project: {
+        type: 'string'
+      },
+      status: {
         type: 'string',
-        enum: ['ru', 'sr', 'en']
-      },
-      min_spent: {
-        type: 'number',
-        description: 'Min total spent in EUR'
-      },
-      min_trips: {
-        type: 'number'
+        enum: ['active', 'pause', 'all']
       }
     }
   }
 }, {
-  name: 'get_analytics',
-  description: 'Returns aggregate business metric. Use for KPI questions.',
+  name: 'query_candidates',
+  description: 'Filter candidates (кадры): hiring pipeline, candidates per project (esp. Лемана Про), start days.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project: {
+        type: 'string'
+      },
+      status: {
+        type: 'string',
+        enum: ['новый', 'собеседование', 'оформление', 'принят', 'отказ']
+      }
+    }
+  }
+}, {
+  name: 'get_stats',
+  description: 'Returns an aggregate metric. Use for KPI questions.',
   input_schema: {
     type: 'object',
     properties: {
       metric: {
         type: 'string',
-        enum: ['revenue_today', 'revenue_week', 'revenue_month', 'fleet_utilization', 'nps_30', 'active_rentals_count', 'top_car_models', 'source_breakdown'],
-        description: 'Which metric to fetch'
+        enum: ['routes_today', 'on_line_total', 'on_line_own', 'on_line_hired', 'closed_routes_30d', 'by_project_today', 'fleet_condition']
       }
     },
     required: ['metric']
   }
 }, {
-  name: 'send_promo',
-  description: 'Send promotional message to customers matching segment. Returns delivery report. Use this when user asks to send a promo, discount, or announcement.',
+  name: 'send_report',
+  description: 'Queue a report to be sent to management via Telegram. Use when user asks to send/prepare a report to Telegram.',
   input_schema: {
     type: 'object',
     properties: {
-      segment: {
+      report: {
         type: 'string',
-        description: 'Human-readable segment description (e.g. "VIP RU-speaking with >€2000 LTV")'
-      },
-      message: {
-        type: 'string',
-        description: 'Promo message body, max 200 chars'
+        description: 'собственный парк / частники / магазины / статистика / кадры / сводный'
       },
       channel: {
         type: 'string',
-        enum: ['whatsapp', 'telegram', 'both']
+        enum: ['telegram']
       }
     },
-    required: ['segment', 'message', 'channel']
-  }
-}, {
-  name: 'generate_post',
-  description: 'Generates social media post text for a specific car model in specified platform/language. Returns post body + hashtags.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      car_model: {
-        type: 'string',
-        description: 'Model from fleet (e.g. "BMW Z4", "Harley")'
-      },
-      platform: {
-        type: 'string',
-        enum: ['instagram', 'tiktok', 'youtube_shorts', 'vk', 'telegram']
-      },
-      lang: {
-        type: 'string',
-        enum: ['ru', 'sr', 'en']
-      }
-    },
-    required: ['car_model', 'platform', 'lang']
-  }
-}, {
-  name: 'check_competitor',
-  description: 'Returns competitor info: prices for benchmark car (BMW 320d), social metrics, recent activity.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      competitor: {
-        type: 'string',
-        enum: ['sixt', 'zim', 'nevian', 'citycar', 'booom', 'all']
-      }
-    },
-    required: ['competitor']
-  }
-}, {
-  name: 'adjust_pricing',
-  description: 'Adjust daily rental price for a car model. Returns confirmation with old → new price and how many cars affected.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      car_model: {
-        type: 'string',
-        description: 'Model name'
-      },
-      new_price_eur: {
-        type: 'number',
-        description: 'New price per day in EUR'
-      }
-    },
-    required: ['car_model', 'new_price_eur']
+    required: ['report']
   }
 }];
-
-/* tool executor — operates on mock CRM data */
-/* русские названия инструментов для интерфейса */
 const TOOL_LABELS = {
-  query_bookings: 'Найти бронирования',
-  query_fleet: 'Найти машины в парке',
-  query_customers: 'Найти клиентов',
-  get_analytics: 'Метрики и аналитика',
-  send_promo: 'Отправить рассылку клиентам',
-  generate_post: 'Создать пост для соцсетей',
-  check_competitor: 'Анализ конкурентов',
-  adjust_pricing: 'Изменить цену авто'
+  query_own_fleet: 'Собственный парк',
+  query_hired: 'Привлечённый парк (частники)',
+  query_stores: 'Магазины',
+  query_candidates: 'Кадры (кандидаты)',
+  get_stats: 'Метрики и статистика',
+  send_report: 'Отправить отчёт в Telegram'
 };
 const TOOL_DESCRIPTIONS = {
-  query_bookings: 'AI находит и фильтрует бронирования по статусу, дате, машине или клиенту. Примеры: «Сколько активных аренд сегодня?», «Все бронирования BMW за неделю», «Кто бронировал на месяц или дольше?»',
-  query_fleet: 'AI ищет машины в парке по статусу (свободна / в аренде / в сервисе), категории, модели. Примеры: «Какие BMW свободны?», «Сколько машин на ТО?», «Все кабриолеты в парке»',
-  query_customers: 'AI находит клиентов по языку, числу поездок, общей сумме покупок. Примеры: «VIP с €2 000+ потрачено», «Все русскоязычные клиенты», «Кто давно не приезжал?»',
-  get_analytics: 'AI достаёт ключевые бизнес-метрики: выручка, загрузка парка, NPS, конверсия, разбивка по каналам. Примеры: «Сколько мы заработали сегодня?», «Какая загрузка парка за неделю?», «Откуда самые лучшие клиенты?»',
-  send_promo: 'AI отправляет рассылку выбранному сегменту через WhatsApp, Telegram или оба канала. Примеры: «Отправь скидку 15% русскоязычным VIP», «Уведоми всех с активной арендой об акции на следующую поездку»',
-  generate_post: 'AI создаёт пост для Instagram, TikTok, YouTube Shorts, VK или Telegram про конкретную машину на любом из 3 языков. Примеры: «Сделай TikTok про BMW Z4 на сербском», «Пост в IG про Harley на русском»',
-  check_competitor: 'AI смотрит что у конкурентов (Sixt, ZIM, NEVIAN, Booom): подписчики, посты, цены, активность в TikTok. Примеры: «Что у Sixt по BMW 320d?», «Кто публикует чаще нас?», «Сравни всех по подписчикам»',
-  adjust_pricing: 'AI меняет цену аренды конкретной модели в парке. Примеры: «Подними BMW 320d на €5», «Снизь Skoda Fabia на эту неделю до €18», «Установи Z4 на €70 на выходные»'
+  query_own_fleet: 'AI ищет свои ТС по статусу (на линии / ремонт / резерв), классу (газель/ларгус), проекту. Примеры: «Сколько газелей на линии?», «Что в ремонте?», «Свои ТС на Лемана Про»',
+  query_hired: 'AI находит частников по статусу, проектам, кто на линии; считает выполненные маршруты. Примеры: «Сколько частников на линии?», «Кто возит Магнит?», «Договоры, что скоро истекают»',
+  query_stores: 'AI смотрит магазины: маршруты сегодня/за месяц, закреплённые свои/частники, «в срок %». Примеры: «Маршруты по магазинам сегодня», «Какие точки на Озоне?»',
+  query_candidates: 'AI работает с кадрами: кандидаты по проектам и статусам, даты выхода. Примеры: «Сколько кандидатов на Лемана Про?», «Кто оформляется на этой неделе?»',
+  get_stats: 'AI достаёт метрики: маршрутов сегодня, на линии свои/частники, закрытые маршруты за 30 дней, разбивка по проектам, состояние парка. Примеры: «Сколько маршрутов сегодня?», «Выполнение плана за месяц»',
+  send_report: 'AI ставит отчёт в очередь на отправку руководству в Telegram (как в ОБЕ2). Примеры: «Отправь сводный отчёт в ТГ», «Пришли отчёт по частникам»'
 };
 function execTool(name, input) {
-  if (name === 'query_bookings') {
-    let res = [...BOOKINGS];
-    if (input.status && input.status !== 'all') res = res.filter(b => b.status === input.status);
-    if (input.car_model) res = res.filter(b => b.car.toLowerCase().includes(input.car_model.toLowerCase()));
-    if (input.customer_lang) res = res.filter(b => b.lang === input.customer_lang);
-    if (input.min_total) res = res.filter(b => b.total >= input.min_total);
+  const D = GFD;
+  if (name === 'query_own_fleet') {
+    let r = [...D.own];
+    if (input.status && input.status !== 'all') r = r.filter(v => v.status === input.status);
+    if (input.kind) r = r.filter(v => v.kind === input.kind);
+    if (input.project) r = r.filter(v => (v.project || '').toLowerCase().includes(input.project.toLowerCase()));
     return {
-      count: res.length,
-      total_revenue_eur: res.reduce((s, b) => s + b.total, 0),
-      bookings: res.slice(0, 10).map(b => ({
-        id: b.id,
-        customer: b.cust,
-        car: b.car,
-        period: `${b.from}→${b.to}`,
-        total: b.total,
-        status: b.status,
-        channel: b.ch,
-        lang: b.lang
+      count: r.length,
+      on_line: r.filter(v => v.status === 'На линии').length,
+      vehicles: r.slice(0, 12).map(v => ({
+        plate: v.plate,
+        brand: v.brand,
+        kind: v.kind,
+        project: v.project,
+        status: v.status,
+        atp: v.atp
       }))
     };
   }
-  if (name === 'query_fleet') {
-    let res = [...FLEET];
-    if (input.status && input.status !== 'all') res = res.filter(f => f.status === input.status);
-    if (input.category) res = res.filter(f => f.cat === input.category);
-    if (input.model) res = res.filter(f => f.model.toLowerCase().includes(input.model.toLowerCase()));
+  if (name === 'query_hired') {
+    let r = [...D.hired];
+    if (input.status && input.status !== 'all') r = r.filter(h => h.status === input.status);
+    if (typeof input.on_line === 'boolean') r = r.filter(h => !!h.onLine === input.on_line);
+    if (input.project) r = r.filter(h => (h.projects || []).some(p => p.toLowerCase().includes(input.project.toLowerCase())));
     return {
-      count: res.length,
-      avg_price_eur: res.length ? Math.round(res.reduce((s, f) => s + f.price, 0) / res.length) : 0,
-      cars: res.slice(0, 12).map(f => ({
-        id: f.id,
-        model: f.model,
-        plate: f.plate,
-        status: f.status,
-        km: f.km,
-        price_per_day: f.price,
-        next: f.next
+      count: r.length,
+      on_line: r.filter(h => h.onLine).length,
+      total_routes_done: r.reduce((s, h) => s + (h.routesDone || 0), 0),
+      contractors: r.slice(0, 12).map(h => ({
+        plate: h.plate,
+        contractor: h.contractor,
+        registered: h.registered,
+        routes_done: h.routesDone,
+        projects: h.projects,
+        status: h.status,
+        on_line: h.onLine
       }))
     };
   }
-  if (name === 'query_customers') {
-    let res = [...CUSTOMERS];
-    if (input.lang) res = res.filter(c => c.lang === input.lang);
-    if (input.min_spent) res = res.filter(c => c.spent >= input.min_spent);
-    if (input.min_trips) res = res.filter(c => c.trips >= input.min_trips);
+  if (name === 'query_stores') {
+    let r = [...D.stores];
+    if (input.project) r = r.filter(s => (s.project || '').toLowerCase().includes(input.project.toLowerCase()));
+    if (input.status && input.status !== 'all') r = r.filter(s => s.status === input.status);
     return {
-      count: res.length,
-      total_ltv_eur: res.reduce((s, c) => s + c.spent, 0),
-      total_cashback_owed_eur: res.reduce((s, c) => s + c.cashback, 0),
-      customers: res.slice(0, 12).map(c => ({
-        id: c.id,
+      count: r.length,
+      routes_today_total: r.reduce((s, x) => s + (x.routesToday || 0), 0),
+      stores: r.slice(0, 12).map(s => ({
+        id: s.id,
+        name: s.name,
+        project: s.project,
+        routes_today: s.routesToday,
+        routes_month: s.routesMonth,
+        own_cars: s.ownCars,
+        hired_cars: s.hiredCars,
+        on_time_pct: s.onTime,
+        status: s.status
+      }))
+    };
+  }
+  if (name === 'query_candidates') {
+    let r = [...D.candidates];
+    if (input.project) r = r.filter(c => (c.project || '').toLowerCase().includes(input.project.toLowerCase()));
+    if (input.status) r = r.filter(c => c.status === input.status);
+    return {
+      count: r.length,
+      hired: r.filter(c => c.status === 'принят').length,
+      candidates: r.slice(0, 12).map(c => ({
         name: c.name,
-        phone: c.phone,
-        lang: c.lang,
-        since: c.since,
-        trips: c.trips,
-        total_spent: c.spent,
-        cashback: c.cashback
+        project: c.project,
+        position: c.position,
+        applied: c.applied,
+        start_day: c.startDay,
+        status: c.status,
+        source: c.source
       }))
     };
   }
-  if (name === 'get_analytics') {
-    const metrics = {
-      revenue_today: {
-        value: 2184,
-        unit: 'EUR',
-        delta: '+18% vs last week'
+  if (name === 'get_stats') {
+    const own = D.own,
+      hired = D.hired,
+      routes = D.routes,
+      stats = D.stats;
+    const ownOn = own.filter(v => v.status === 'На линии').length;
+    const hiredOn = hired.filter(h => h.onLine).length;
+    const routesToday = routes.length ? routes[routes.length - 1].routes : 0;
+    const closed = stats.reduce((a, r) => a + r.closed, 0),
+      planned = stats.reduce((a, r) => a + r.planned, 0);
+    const PROJ = ['Лемана Про', 'Магнит', 'Х5 Retail', 'Озон', 'ВкусВилл', 'Самокат'];
+    const M = {
+      routes_today: {
+        value: routesToday,
+        unit: 'маршрутов'
       },
-      revenue_week: {
-        value: 14820,
-        unit: 'EUR',
-        delta: '+9% vs prev week'
+      on_line_total: {
+        value: ownOn + hiredOn,
+        own: ownOn,
+        hired: hiredOn
       },
-      revenue_month: {
-        value: 58400,
-        unit: 'EUR',
-        delta: '+12% YoY'
+      on_line_own: {
+        value: ownOn,
+        of_total: own.length
       },
-      fleet_utilization: {
-        value: 63.5,
-        unit: '%',
-        delta: '+2.1pp 7d',
-        rented: 67,
-        available: 32,
-        maintenance: 8
+      on_line_hired: {
+        value: hiredOn,
+        of_total: hired.length
       },
-      nps_30: {
-        value: 72,
-        delta: '+5',
-        responses: 184,
-        promoters_pct: 78,
-        detractors_pct: 6
+      closed_routes_30d: {
+        value: closed,
+        planned: planned,
+        completion_pct: planned ? Math.round(closed / planned * 100) : 0
       },
-      active_rentals_count: {
-        value: 68,
-        delta: '+4 vs yesterday'
-      },
-      top_car_models: [{
-        model: 'BMW Z4 cabrio',
-        utilization: '100%',
-        revenue_week: 1820
-      }, {
-        model: 'Mini Cooper S Cabrio',
-        utilization: '80%',
-        revenue_week: 1624
-      }, {
-        model: 'BMW X5',
-        utilization: '75%',
-        revenue_week: 2700
-      }, {
-        model: 'VW Touran',
-        utilization: '75%',
-        revenue_week: 1064
-      }],
-      source_breakdown: {
-        instagram_dm: '34%',
-        whatsapp_direct: '28%',
-        organic_site: '18%',
-        yandex_maps: '11%',
-        partner_hotels: '6%',
-        aggregators: '3%'
+      by_project_today: PROJ.map(p => ({
+        project: p,
+        own: own.filter(v => v.status === 'На линии' && v.project === p).length,
+        hired: hired.filter(h => h.onLine && (h.projects || []).includes(p)).length
+      })),
+      fleet_condition: {
+        on_line: ownOn,
+        repair: own.filter(v => v.status === 'Ремонт' || v.status === 'Капремонт').length,
+        reserve: own.filter(v => v.status === 'Резерв').length,
+        total: own.length
       }
     };
-    return metrics[input.metric] || {
+    return M[input.metric] || {
       error: 'unknown metric'
     };
   }
-  if (name === 'send_promo') {
-    // mock segment count
-    const seg = (input.segment || '').toLowerCase();
-    let targetCount = 142;
-    if (seg.includes('vip') || seg.includes('ltv')) targetCount = 87;
-    if (seg.includes('русск') || seg.includes('ru')) targetCount = 96;
-    if (seg.includes('срб') || seg.includes('sr')) targetCount = 64;
-    if (seg.includes('long') || seg.includes('месяц')) targetCount = 38;
-    const ts = new Date().toLocaleString('ru-RU');
+  if (name === 'send_report') {
     return {
       status: 'queued',
-      segment_matched: targetCount + ' customers',
-      channel: input.channel,
-      message_preview: input.message,
-      delivery_eta: '3-7 minutes',
-      campaign_id: 'CMP-' + Math.floor(Math.random() * 99999),
-      timestamp: ts,
-      note: 'Rate-limit: 60 msg/min via Wazzup24, queued in background.'
-    };
-  }
-  if (name === 'generate_post') {
-    const model = input.car_model || 'BMW Z4';
-    const platform = input.platform;
-    const lang = input.lang;
-    const samples = {
-      ru: {
-        instagram: `${model}. Без депозита, кэшбэк 10%, доставим на BEG или в отель.\n\nЦенник от прошлогодних — не двигали. Бронируйте на длинные — выгоднее.`,
-        tiktok: `${model} в Белграде. Звук в наушниках обязателен.\n\nКрыша вниз → Котор за 5 часов → ключи у нас.`,
-        youtube_shorts: `Берём ${model}. Едем по Адриатике. Возвращаемся с историей.\n\nДоставка в BEG бесплатно, страховка cross-border оформляется онлайн.`,
-        vk: `${model} в долгосрочной аренде от 1 недели — без депозита.\n\nПодробности и доступные даты — в личных сообщениях или на gfd.rs/long.`,
-        telegram: `${model} · €${model.includes('Z4') ? 65 : model.includes('Harley') ? 95 : model.includes('Mini') ? 58 : 38}/день · cabrio season открыт.\n\nДоставим к рейсу или в отель. Cashback 10% автоматически.`
-      },
-      sr: {
-        instagram: `${model}. Bez depozita, cashback 10%, dovozimo na BEG ili u hotel.`,
-        tiktok: `${model} u Beogradu. Subota — Kotor — krov dole.`,
-        youtube_shorts: `${model}. Pick it up. Drive Adriatic. Come back with stories.`,
-        vk: `${model} dugoročno od 1 nedelje — bez depozita. Detalji u DM.`,
-        telegram: `${model} · cabrio season je počeo. Dovozimo na aerodrom ili hotel.`
-      },
-      en: {
-        instagram: `${model} weekend mood. No deposit, 10% cashback, airport delivery.\n\nLong-term from 1 week — better rates, no paperwork.`,
-        tiktok: `${model} in Belgrade. Sound on.\n\nTop down → Adriatic → keys waiting at hotel.`,
-        youtube_shorts: `Rent a ${model}. Drive the Adriatic. Free hotel delivery.\n\nCross-border to Montenegro, Croatia, Bosnia — all sorted online.`,
-        vk: `${model} long-term from 1 week. No deposit. DM for dates.`,
-        telegram: `${model} cabrio season is open. Free BEG airport delivery.`
-      }
-    };
-    const tagsBank = {
-      ru: '#gfd #белград #аренда_авто #serbia',
-      sr: '#gfd #beograd #rentacar #adriatic',
-      en: '#gfd #belgrade #cardrental #serbia #balkans'
-    };
-    return {
-      platform,
-      lang,
-      car_model: model,
-      body: (samples[lang] || samples.ru)[platform] || (samples[lang] || samples.ru).instagram,
-      hashtags: tagsBank[lang] || tagsBank.ru,
-      cta: 'gfd.rs/' + model.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      ready_for: 'queue (scheduled)'
-    };
-  }
-  if (name === 'check_competitor') {
-    const comp = input.competitor;
-    const data = {
-      sixt: {
-        name: 'Sixt Srbija',
-        followers_ig: 3354,
-        weekly_posts: 5,
-        avg_er_pct: 2.8,
-        bmw_320d_eur_per_day: 58,
-        tiktok_followers: 1200,
-        recent_activity: 'Подняли BMW 320d с €52 до €58 за последнюю неделю'
-      },
-      zim: {
-        name: 'ZIM Rent',
-        followers_ig: 1890,
-        weekly_posts: 2,
-        avg_er_pct: 3.2,
-        bmw_320d_eur_per_day: 42,
-        tiktok_followers: 0,
-        recent_activity: 'Низкая частота, акцент на ВКонтакте'
-      },
-      nevian: {
-        name: 'NEVIAN',
-        followers_ig: 2040,
-        weekly_posts: 4,
-        avg_er_pct: 3.7,
-        bmw_320d_eur_per_day: 44,
-        tiktok_followers: 320,
-        recent_activity: 'Запустили Reels-серию про Crna Gora'
-      },
-      citycar: {
-        name: 'City Car Beograd',
-        followers_ig: 1210,
-        weekly_posts: 1,
-        avg_er_pct: 5.8,
-        bmw_320d_eur_per_day: 36,
-        tiktok_followers: 0,
-        recent_activity: 'Высокий ER на формат «история клиента»'
-      },
-      booom: {
-        name: 'Booom',
-        followers_ig: 3802,
-        weekly_posts: 6,
-        avg_er_pct: 3.4,
-        bmw_320d_eur_per_day: 48,
-        tiktok_followers: 2100,
-        recent_activity: 'Стартовал TikTok 03/2026, уже 2.1K'
-      }
-    };
-    const us = {
-      name: 'ГФД (us)',
-      followers_ig: 2517,
-      weekly_posts: 3,
-      avg_er_pct: 4.1,
-      bmw_320d_eur_per_day: 39,
-      tiktok_followers: 0
-    };
-    if (comp === 'all') {
-      return {
-        us,
-        competitors: Object.values(data)
-      };
-    }
-    return {
-      us,
-      competitor: data[comp]
-    };
-  }
-  if (name === 'adjust_pricing') {
-    const model = input.car_model;
-    const matches = FLEET.filter(f => f.model.toLowerCase().includes((model || '').toLowerCase()));
-    const old_price = matches.length ? matches[0].price : null;
-    return {
-      status: 'updated',
-      car_model: model,
-      cars_affected: matches.length,
-      old_price_eur: old_price,
-      new_price_eur: input.new_price_eur,
-      delta_pct: old_price ? Math.round((input.new_price_eur - old_price) / old_price * 100) : null,
-      effective_from: 'next booking',
-      change_id: 'PR-' + Math.floor(Math.random() * 99999)
+      report: input.report || 'сводный',
+      channel: input.channel || 'telegram',
+      recipient: '@otchetRZ_bot · ЛС руководителя',
+      eta: '1-2 минуты',
+      note: 'Отправка в Telegram настраивается через VPS + Xray-прокси, как в ОБЕ2.',
+      report_id: 'RPT-' + Math.floor(Math.random() * 99999)
     };
   }
   return {
     error: 'unknown tool: ' + name
   };
 }
-
 /* call Claude with tools (non-streaming for simplicity in tool loop) */
 async function callClaudeWithTools({
   messages,
   system,
   tools,
-  model = 'claude-sonnet-4-6',
+  model = 'claude-sonnet-5',
   max_tokens = 2000
 }) {
   const key = (localStorage.getItem(KEY_STORAGE) || '').trim();
@@ -3006,97 +2246,97 @@ async function runAgent({
 
 /* Demo mode: fake scripted agent runs */
 const DEMO_SCRIPTS = {
-  bookings: {
-    text_pre: 'Сейчас посмотрю активные бронирования.',
+  online: {
+    text_pre: 'Сейчас посмотрю, сколько ТС на линии.',
     tools: [{
-      name: 'query_bookings',
+      name: 'get_stats',
       input: {
-        status: 'active'
+        metric: 'on_line_total'
+      },
+      delay: 450
+    }, {
+      name: 'get_stats',
+      input: {
+        metric: 'by_project_today'
       },
       delay: 500
     }],
-    text_post: 'Сейчас активных бронирований: 5. Общая выручка по ним — €1 698. Самые крупные — BMW X5 на 9 дней (€810) и Skoda Fabia на 6 дней (€120). Всё едет в зелёной зоне, проблем не вижу.'
+    text_post: 'Готово — сводка на линии в карточках выше: свои + частники и разбивка по проектам. Нужно — выгружу в отчёт или отправлю в Telegram.'
   },
-  vip: {
-    text_pre: 'Найду VIP-клиентов и подготовлю промо.',
+  repair: {
+    text_pre: 'Проверю собственный парк в ремонте.',
     tools: [{
-      name: 'query_customers',
+      name: 'query_own_fleet',
       input: {
-        lang: 'ru',
-        min_spent: 1500
+        status: 'Ремонт'
       },
-      delay: 600
+      delay: 500
+    }],
+    text_post: 'Показал ТС в ремонте (карточка выше) — по каждой видно проект и АТП. Могу добавить капремонт и резерв.'
+  },
+  candidates: {
+    text_pre: 'Смотрю кандидатов на Лемана Про.',
+    tools: [{
+      name: 'query_candidates',
+      input: {
+        project: 'Лемана Про'
+      },
+      delay: 550
+    }],
+    text_post: 'Кандидаты на Лемана Про — в карточке выше, с датами выхода и статусом воронки. Могу отфильтровать только оформляющихся.'
+  },
+  stores: {
+    text_pre: 'Проверю магазины и выполнение плана.',
+    tools: [{
+      name: 'query_stores',
+      input: {},
+      delay: 500
     }, {
-      name: 'send_promo',
+      name: 'get_stats',
       input: {
-        segment: 'RU-speaking, LTV >€1 500',
-        message: 'Майская акция: −15% на long-term от 14 дней. Только до 25 мая.',
-        channel: 'both'
+        metric: 'closed_routes_30d'
       },
-      delay: 800
+      delay: 450
     }],
-    text_post: 'Готово. Сегмент «RU-speaking + LTV >€1 500» — 3 клиента (Иван П., Анна К., Дмитрий В.), в среднем €1 540 LTV. Промо ушло в WhatsApp + Telegram, ETA доставки 3-7 минут. Campaign ID сохранил в журнале.'
+    text_post: 'Данные по магазинам и выполнению плана за 30 дней — выше. Точки ниже 90% стоит взять на контроль.'
   },
-  post: {
-    text_pre: 'Сгенерирую пост в Instagram про Z4 на русском.',
+  report: {
+    text_pre: 'Подготовлю сводный отчёт и поставлю на отправку в Telegram.',
     tools: [{
-      name: 'generate_post',
+      name: 'get_stats',
       input: {
-        car_model: 'BMW Z4',
-        platform: 'instagram',
-        lang: 'ru'
-      },
-      delay: 700
-    }],
-    text_post: 'Пост готов и можно сразу добавлять в очередь публикаций. Текст без эмодзи (как в бренд-гайде), CTA с UTM на gfd.rs/bmw-z4. Если нужно — могу сделать варианты на сербском или английском.'
-  },
-  competitor: {
-    text_pre: 'Проверю что у Sixt по BMW 320d.',
-    tools: [{
-      name: 'check_competitor',
-      input: {
-        competitor: 'sixt'
-      },
-      delay: 600
-    }],
-    text_post: 'У Sixt BMW 320d сейчас €58/день, они подняли с €52 на прошлой неделе. У нас €39 — есть запас поднять до €44 без потери конкурентной позиции. Это даст +€5/день × 12 машин × средняя загрузка 65% ≈ €1 170/месяц дополнительно. Рекомендую обновить.'
-  },
-  utilization: {
-    text_pre: 'Смотрю утилизацию парка и какие машины простаивают.',
-    tools: [{
-      name: 'get_analytics',
-      input: {
-        metric: 'fleet_utilization'
+        metric: 'on_line_total'
       },
       delay: 400
     }, {
-      name: 'query_fleet',
+      name: 'send_report',
       input: {
-        status: 'avail'
+        report: 'сводный',
+        channel: 'telegram'
       },
-      delay: 500
+      delay: 700
     }],
-    text_post: 'Загрузка 63.5%, в сервисе 8 машин (выше нормы). Свободные сегодня: VW UP! и Smart Fortwo — эконом-сегмент простаивает, можно дать промо «−20% на эконом до конца недели». Mini Cabrio и Z4 в 100% загрузке — поднимем цену на следующую неделю.'
+    text_post: 'Сводный отчёт поставлен в очередь на отправку в Telegram руководству. Реальная отправка подключается через VPS + Xray-прокси, как в ОБЕ2.'
   },
   default: {
     text_pre: 'Сейчас разберусь.',
     tools: [{
-      name: 'get_analytics',
+      name: 'get_stats',
       input: {
-        metric: 'revenue_today'
+        metric: 'routes_today'
       },
-      delay: 500
+      delay: 450
     }],
-    text_post: 'Готово. Сегодня выручка €2 184 (+18% vs прошлая неделя). Если нужно глубже — могу разложить по машинам, источникам или клиентским сегментам.'
+    text_post: 'Готово — ключевая цифра в карточке выше. Могу разложить по проектам, магазинам или парку.'
   }
 };
 function pickDemoScript(prompt) {
   const p = (prompt || '').toLowerCase();
-  if (p.includes('броні') || p.includes('брон')) return DEMO_SCRIPTS.bookings;
-  if (p.includes('vip') || p.includes('акци') || p.includes('пром') || p.includes('сегмент')) return DEMO_SCRIPTS.vip;
-  if (p.includes('пост') || p.includes('сгенер') || p.includes('reels') || p.includes('instagram')) return DEMO_SCRIPTS.post;
-  if (p.includes('sixt') || p.includes('конкурент') || p.includes('zim') || p.includes('booom')) return DEMO_SCRIPTS.competitor;
-  if (p.includes('простаива') || p.includes('загрузк') || p.includes('утилиз') || p.includes('парк')) return DEMO_SCRIPTS.utilization;
+  if (p.includes('на линии') || p.includes('линии') || p.includes('свои и частник')) return DEMO_SCRIPTS.online;
+  if (p.includes('ремонт') || p.includes('капремонт') || p.includes('сломан')) return DEMO_SCRIPTS.repair;
+  if (p.includes('кандидат') || p.includes('кадр') || p.includes('лемана') || p.includes('выход')) return DEMO_SCRIPTS.candidates;
+  if (p.includes('магазин') || p.includes('план') || p.includes('в срок') || p.includes('точк')) return DEMO_SCRIPTS.stores;
+  if (p.includes('отчёт') || p.includes('отчет') || p.includes('telegram') || p.includes('тг') || p.includes('отправ')) return DEMO_SCRIPTS.report;
   return DEMO_SCRIPTS.default;
 }
 async function* fakeText(text, perCh = 8) {
@@ -3165,23 +2405,23 @@ async function runDemoAgent({
 
 /* ----------------- ASSISTANT CHAT PAGE ----------------- */
 const SUGGESTIONS = [{
-  label: 'Сколько активных бронирований сейчас и на какую сумму?',
-  prompt: 'Сколько активных бронирований сейчас и на какую сумму?'
+  label: 'Сколько ТС на линии сегодня — свои и частники?',
+  prompt: 'Сколько ТС на линии сегодня — свои и частники, и разбивка по проектам?'
 }, {
-  label: 'Найди VIP-клиентов (RU, LTV >€1500) и отправь им майскую акцию −15%',
-  prompt: 'Найди VIP-клиентов с русским языком и LTV больше €1500 — отправь им майскую акцию: −15% на long-term от 14 дней, до 25 мая. WhatsApp + Telegram.'
+  label: 'Покажи собственный парк в ремонте',
+  prompt: 'Покажи собственные ТС в ремонте и капремонте'
 }, {
-  label: 'Сгенерируй пост в Instagram про BMW Z4 на русском',
-  prompt: 'Сгенерируй пост в Instagram про BMW Z4 на русском'
+  label: 'Сколько кандидатов на Лемана Про и когда выходят?',
+  prompt: 'Сколько кандидатов на Лемана Про и какие даты выхода?'
 }, {
-  label: 'Что у Sixt с BMW 320d? Стоит ли поднимать цену?',
-  prompt: 'Что у Sixt с BMW 320d? Стоит ли поднимать цену?'
+  label: 'Какие магазины ниже плана?',
+  prompt: 'Покажи магазины и выполнение плана за 30 дней — где ниже 90%?'
 }, {
-  label: 'Какие машины простаивают и что с ними делать?',
-  prompt: 'Какие машины простаивают и что с ними делать?'
+  label: 'Сколько частников на линии и кто возит Магнит?',
+  prompt: 'Сколько частников на линии и кто из них возит Магнит?'
 }, {
-  label: 'Какой самый прибыльный car-model на этой неделе?',
-  prompt: 'Какой самый прибыльный car-model на этой неделе?'
+  label: 'Подготовь сводный отчёт и отправь в Telegram',
+  prompt: 'Подготовь сводный отчёт по автопарку и отправь в Telegram руководству'
 }];
 function ToolCallCard({
   call
@@ -3209,37 +2449,25 @@ function ToolCallCard({
 }
 function renderToolOutput(name, out) {
   if (out.error) return '⚠ ' + out.error;
-  if (name === 'query_bookings') {
-    return `${out.count} broни, на €${out.total_revenue_eur}\n` + out.bookings.slice(0, 5).map(b => `  • ${b.id} · ${b.customer} · ${b.car} · €${b.total} · ${b.status}`).join('\n');
+  if (name === 'query_own_fleet') {
+    return `${out.count} ТС · на линии ${out.on_line}\n` + (out.vehicles || []).slice(0, 6).map(v => `  • ${v.plate} · ${v.brand} · ${v.kind} · ${v.project} · ${v.status}`).join('\n');
   }
-  if (name === 'query_fleet') {
-    return `${out.count} машин, ср.цена €${out.avg_price_eur}/день\n` + out.cars.slice(0, 5).map(c => `  • ${c.model} · ${c.plate} · ${c.status} · €${c.price_per_day}/день · ${c.km.toLocaleString('ru-RU').replace(',', ' ')} км`).join('\n');
+  if (name === 'query_hired') {
+    return `${out.count} частников · на линии ${out.on_line} · маршрутов всего ${out.total_routes_done}\n` + (out.contractors || []).slice(0, 6).map(h => `  • ${h.plate} · ${h.contractor} · ${h.routes_done} маршр. · ${(h.projects || []).join(', ')} · ${h.on_line ? 'на линии' : '—'}`).join('\n');
   }
-  if (name === 'query_customers') {
-    return `${out.count} клиентов, LTV total €${out.total_ltv_eur}, cashback owed €${out.total_cashback_owed_eur}\n` + out.customers.slice(0, 5).map(c => `  • ${c.name} · ${c.lang} · ${c.trips} trips · €${c.total_spent} LTV · €${c.cashback} cashback`).join('\n');
+  if (name === 'query_stores') {
+    return `${out.count} магазинов · маршрутов сегодня ${out.routes_today_total}\n` + (out.stores || []).slice(0, 6).map(s => `  • ${s.name} · сегодня ${s.routes_today} · свои ${s.own_cars}/частн. ${s.hired_cars} · в срок ${s.on_time_pct}%`).join('\n');
   }
-  if (name === 'get_analytics') {
-    if (Array.isArray(out)) return out.map(r => `  • ${r.model || JSON.stringify(r)}`).join('\n');
-    if (typeof out === 'object') {
-      return Object.entries(out).map(([k, v]) => `  ${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join('\n');
-    }
+  if (name === 'query_candidates') {
+    return `${out.count} кандидатов · принято ${out.hired}\n` + (out.candidates || []).slice(0, 6).map(c => `  • ${c.name} · ${c.project} · ${c.position} · выход ${c.start_day} · ${c.status}`).join('\n');
+  }
+  if (name === 'get_stats') {
+    if (Array.isArray(out)) return out.map(r => `  • ${r.project}: свои ${r.own} / частники ${r.hired}`).join('\n');
+    if (typeof out === 'object') return Object.entries(out).map(([k, v]) => `  ${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join('\n');
     return String(out);
   }
-  if (name === 'send_promo') {
-    return `► status: ${out.status}\n► ${out.segment_matched} via ${out.channel}\n► message: "${out.message_preview}"\n► ETA: ${out.delivery_eta}\n► campaign: ${out.campaign_id}`;
-  }
-  if (name === 'generate_post') {
-    return `► ${out.platform.toUpperCase()} · ${out.lang.toUpperCase()} · ${out.car_model}\n\n${out.body}\n\n${out.hashtags}\n\n► CTA: ${out.cta}`;
-  }
-  if (name === 'check_competitor') {
-    if (out.competitors) {
-      return out.competitors.map(c => `  • ${c.name} · IG ${c.followers_ig} · ${c.weekly_posts}п/нед · ER ${c.avg_er_pct}% · BMW 320d €${c.bmw_320d_eur_per_day}`).join('\n') + `\n  vs us · IG ${out.us.followers_ig} · €${out.us.bmw_320d_eur_per_day}`;
-    }
-    const c = out.competitor;
-    return `► ${c.name}\n  followers IG: ${c.followers_ig}\n  weekly posts: ${c.weekly_posts}\n  avg ER: ${c.avg_er_pct}%\n  BMW 320d: €${c.bmw_320d_eur_per_day}/день\n  TikTok: ${c.tiktok_followers}\n  recent: ${c.recent_activity}\n► vs us · IG ${out.us.followers_ig} · €${out.us.bmw_320d_eur_per_day}`;
-  }
-  if (name === 'adjust_pricing') {
-    return `► ${out.status}\n► ${out.car_model}: €${out.old_price_eur} → €${out.new_price_eur} (${out.delta_pct > 0 ? '+' : ''}${out.delta_pct}%)\n► затронуто авто: ${out.cars_affected}\n► действует с: ${out.effective_from}\n► change_id: ${out.change_id}`;
+  if (name === 'send_report') {
+    return `► статус: ${out.status}\n► отчёт: ${out.report}\n► канал: ${out.channel} (${out.recipient})\n► ETA: ${out.eta}\n► id: ${out.report_id}\n► ${out.note}`;
   }
   return JSON.stringify(out, null, 2).slice(0, 500);
 }
@@ -3252,6 +2480,9 @@ function AssistantChat() {
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [messages]);
+  useEffect(() => {
+    loadGFD();
+  }, []);
   function appendItem(item) {
     setMessages(m => [...m, item]);
   }
@@ -3273,6 +2504,7 @@ function AssistantChat() {
       kind: 'user',
       text
     });
+    if (!GFD.own.length) await loadGFD();
     const isLive = (localStorage.getItem(KEY_STORAGE) || '').startsWith('sk-ant-');
     const onEvent = e => {
       if (e.type === 'user') return;
@@ -3358,9 +2590,9 @@ function AssistantChat() {
   }
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "AI помощник"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "AI агент"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► claude sonnet 4.6 · 8 инструментов · работает с реальными данными CRM")), /*#__PURE__*/React.createElement("div", {
+  }, "► claude sonnet 5 · 6 инструментов · работает с данными автопарка")), /*#__PURE__*/React.createElement("div", {
     className: "actions"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -3376,7 +2608,7 @@ function AssistantChat() {
     ref: bodyRef
   }, messages.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "asst-greeting"
-  }, /*#__PURE__*/React.createElement("h4", null, "Чем помочь?"), /*#__PURE__*/React.createElement("p", null, "Я работаю с CRM как менеджер: умею смотреть бронирования, парк, клиентов, метрики; отправлять промо; генерировать посты; сравнивать с конкурентами; менять цены."), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("h4", null, "Чем помочь?"), /*#__PURE__*/React.createElement("p", null, "Я работаю с системой учёта автопарка: смотрю собственный парк и частников, магазины и маршруты, статистику и кадры; считаю метрики; готовлю отчёты и ставлю их на отправку в Telegram."), /*#__PURE__*/React.createElement("p", {
     style: {
       marginTop: 8
     }
@@ -3390,7 +2622,7 @@ function AssistantChat() {
       className: "asst-msg bot"
     }, /*#__PURE__*/React.createElement("div", {
       className: "meta"
-    }, "claude sonnet 4.6 ", m.kind === 'bot-stream' ? '· streaming' : ''), /*#__PURE__*/React.createElement("div", {
+    }, "claude sonnet 5 ", m.kind === 'bot-stream' ? '· streaming' : ''), /*#__PURE__*/React.createElement("div", {
       className: "body"
     }, m.text));
     if (m.kind === 'tool') return /*#__PURE__*/React.createElement(ToolCallCard, {
@@ -3409,7 +2641,7 @@ function AssistantChat() {
   }, /*#__PURE__*/React.createElement("textarea", {
     value: draft,
     onChange: e => setDraft(e.target.value),
-    placeholder: "Спросите что угодно про CRM — данные, метрики, действия. Я подберу инструменты сам.",
+    placeholder: "Спросите про автопарк — парк, частники, магазины, маршруты, кадры. Я подберу инструменты сам.",
     onKeyDown: e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -3465,19 +2697,145 @@ function AssistantChat() {
 /* APP                                                          */
 /* ============================================================ */
 function Reports() {
-  return /*#__PURE__*/React.createElement("div", {
+  const REP = [{
+    t: 'Собственный автопарк',
+    d: 'ТС · статусы, проекты, пробег, АТП',
+    f: '/data/own-fleet.csv',
+    n: 'ГФД_собственный_парк'
+  }, {
+    t: 'Привлечённый парк',
+    d: 'частники · регистрация, маршруты, проекты',
+    f: '/data/hired-fleet.csv',
+    n: 'ГФД_привлечённый_парк'
+  }, {
+    t: 'Магазины',
+    d: 'точки · маршруты, транспорт, «в срок %»',
+    f: '/data/stores.csv',
+    n: 'ГФД_магазины'
+  }, {
+    t: 'Кадры',
+    d: 'кандидаты · проекты, даты выхода, статусы',
+    f: '/data/candidates.csv',
+    n: 'ГФД_кадры'
+  }];
+  const dl = async (f, n) => {
+    try {
+      const t = await (await fetch(f + '?t=' + Date.now())).text();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([t], {
+        type: 'text/csv;charset=utf-8'
+      }));
+      a.download = n + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {}
+  };
+  const dlStats = async () => {
+    try {
+      const d = await (await fetch('/data/stats.json?t=' + Date.now())).json();
+      const rows = d.rows || [];
+      const stores = [...new Set(rows.map(r => r.store))];
+      const agg = stores.map(s => {
+        const rs = rows.filter(r => r.store === s);
+        const c = rs.reduce((a, r) => a + r.closed, 0),
+          p = rs.reduce((a, r) => a + r.planned, 0);
+        return [s, rs[0] ? rs[0].project : '', c, p, p ? Math.round(c / p * 100) : 0, rs.length ? Math.round(rs.reduce((a, r) => a + r.onTime, 0) / rs.length) : 0];
+      });
+      const head = ['Магазин', 'Проект', 'Закрыто маршрутов', 'Запланировано', 'Выполнение %', 'В срок %'];
+      const lines = [head.join(';'), ...agg.map(r => r.join(';'))];
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], {
+        type: 'text/csv;charset=utf-8'
+      }));
+      a.download = 'ГФД_статистика_маршрутов_' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {}
+  };
+  return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "page-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Отчёты"), /*#__PURE__*/React.createElement("div", {
+    className: "sub"
+  }, "► выгрузки по автопарку · CSV (Excel) · отправка в Telegram — в плане"))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Доступные отчёты"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, "CSV · UTF-8")), /*#__PURE__*/React.createElement("div", {
+    className: "b flush"
+  }, REP.map((r, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "sync-row",
     style: {
-      padding: '24px'
+      borderBottom: '1px solid var(--line)'
     }
-  }, /*#__PURE__*/React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ico"
+  }, "CSV"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "name"
+  }, r.t), /*#__PURE__*/React.createElement("div", {
+    className: "desc"
+  }, r.d)), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
     style: {
-      margin: '0 0 8px'
+      display: 'flex',
+      gap: 8
     }
-  }, "Отчёты"), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => dl(r.f, r.n)
+  }, "↓ Скачать"), /*#__PURE__*/React.createElement("button", {
+    disabled: true,
+    title: "Настраивается через VPS + Xray-прокси"
+  }, "✈ В Telegram")))), /*#__PURE__*/React.createElement("div", {
+    className: "sync-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "ico"
+  }, "CSV"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "name"
+  }, "Статистика маршрутов"), /*#__PURE__*/React.createElement("div", {
+    className: "desc"
+  }, "закрытые маршруты по магазинам · выполнение плана · 30 дней")), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
     style: {
-      color: 'var(--cream-4)'
+      display: 'flex',
+      gap: 8
     }
-  }, "Выгрузки, печатные формы и экспорт по автопарку — в разработке."));
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: dlStats
+  }, "↓ Скачать"), /*#__PURE__*/React.createElement("button", {
+    disabled: true,
+    title: "Настраивается через VPS + Xray-прокси"
+  }, "✈ В Telegram"))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 14
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Отправка в Telegram"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, "в плане")), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: 'var(--cream-2)',
+      fontSize: 13,
+      margin: 0,
+      lineHeight: 1.6
+    }
+  }, "Автоматическая рассылка отчётов руководству по расписанию будет подключена через ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: 'var(--cream)'
+    }
+  }, "@otchetRZ_bot"), " и VPS с Xray-прокси — по той же схеме, что уже работает в ОБЕ2. Сейчас отчёты доступны для ручного скачивания в CSV."))));
 }
 function App() {
   const [page, setPage] = useState('dash');
@@ -3501,15 +2859,7 @@ function App() {
     reports: ['ГФД CRM', 'Отчёты'],
     sett: ['ГФД CRM', 'Настройки']
   };
-  const ACTIONS = {
-    sett: null,
-    convo: /*#__PURE__*/React.createElement("button", {
-      onClick: () => setPage('sett')
-    }, "добавить канал"),
-    sync: /*#__PURE__*/React.createElement("button", {
-      onClick: () => setPage('sett')
-    }, "добавить источник")
-  };
+  const ACTIONS = {};
   return /*#__PURE__*/React.createElement("div", {
     className: "app"
   }, /*#__PURE__*/React.createElement(Sidebar, {
