@@ -1271,54 +1271,233 @@ function Bookings() {
 
 /* ----------------- FLEET ----------------- */
 function Fleet() {
+  const [rows, setRows] = useState([]);
+  useEffect(() => {
+    fetch('/data/own-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
+  }, []);
+  const SC = {
+    'На линии': '#5DCB94',
+    'Ремонт': '#FFB84A',
+    'Капремонт': '#FF6464',
+    'Резерв': '#4A8FA8'
+  };
+  const pill = s => {
+    const c = SC[s] || '#8B8377';
+    return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: '11.5px',
+        fontWeight: 600,
+        padding: '3px 10px',
+        borderRadius: '8px',
+        color: c,
+        background: c + '26',
+        whiteSpace: 'nowrap'
+      }
+    }, s);
+  };
+  const total = rows.length,
+    on = rows.filter(v => v.status === 'На линии').length;
+  const gaz = rows.filter(v => v.kind === 'Газель').length,
+    larg = rows.filter(v => v.kind === 'Ларгус').length;
+  const rem = rows.filter(v => v.status === 'Ремонт' || v.status === 'Капремонт').length;
+  const pm = {};
+  rows.forEach(v => {
+    pm[v.project] = pm[v.project] || {
+      t: 0,
+      on: 0
+    };
+    pm[v.project].t++;
+    if (v.status === 'На линии') pm[v.project].on++;
+  });
+  const projects = Object.entries(pm).sort((a, b) => b[1].t - a[1].t);
+  const download = () => {
+    const head = ['Госномер', 'Марка', 'Тип', 'Класс', 'Проект', 'Статус', 'Готовность', 'Пробег', 'АТП'];
+    const lines = [head.join(';'), ...rows.map(v => [v.plate, v.brand, v.type, v.kind, v.project, v.status, v.ready ? 'исправна' : '—', v.mileage, v.atp].join(';'))];
+    const blob = new Blob(['﻿' + lines.join('\r\n')], {
+      type: 'text/csv;charset=utf-8'
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ГФД_собственный_парк_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Парк · ", FLEET.length, " машин (выборка)"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Собственный автопарк"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► 67 в аренде · 32 свободно · 8 в сервисе")), /*#__PURE__*/React.createElement("div", {
+  }, "► ", total, " ТС · исправных ", on, " · в ремонте ", rem)), /*#__PURE__*/React.createElement("div", {
     className: "actions"
-  }, /*#__PURE__*/React.createElement("button", null, "фильтр"), /*#__PURE__*/React.createElement("button", null, "экспорт"), /*#__PURE__*/React.createElement("button", {
-    className: "primary"
-  }, "+ авто"))), /*#__PURE__*/React.createElement("div", {
-    className: "fleet-grid"
-  }, FLEET.map(f => /*#__PURE__*/React.createElement("div", {
-    key: f.id,
-    className: "fleet-card"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: download
+  }, "↓ Скачать отчёт"))), /*#__PURE__*/React.createElement("div", {
+    className: "stats"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "top"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "model"
-  }, f.model), /*#__PURE__*/React.createElement("div", {
-    className: "plate"
-  }, f.plate)), /*#__PURE__*/React.createElement("span", {
-    className: 'pill ' + (f.status === 'rented' ? 'rented' : f.status === 'avail' ? 'avail' : 'maint')
-  }, f.status)), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► всего ТС"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, total), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "собственный парк"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► исправные · на линии"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, on), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "delta up"
+  }, total ? Math.round(on / total * 100) : 0, "%"), /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "готовность"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► газели"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, gaz), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "осн. развоз"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► ларгусы"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, larg), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "лёгкий развоз"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► в ремонте"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, rem), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "требуют внимания")))), /*#__PURE__*/React.createElement("div", {
+    className: "grid-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "По проектам"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, "на линии / всего")), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, projects.map(([p, x]) => /*#__PURE__*/React.createElement("div", {
+    key: p,
+    style: {
+      marginBottom: '13px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
-      fontSize: 12,
-      color: 'var(--cream-3)',
-      fontFamily: "'JetBrains Mono', monospace",
-      letterSpacing: '.04em',
-      marginTop: 8
+      fontSize: '13px',
+      marginBottom: '6px'
     }
-  }, /*#__PURE__*/React.createElement("span", null, f.cat), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, p), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: 'var(--coral)',
+      color: 'var(--cream-3)',
+      fontFamily: "'JetBrains Mono',monospace"
+    }
+  }, x.on, "/", x.t)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '8px',
+      borderRadius: '5px',
+      background: 'var(--bg-4)',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      width: (x.t ? Math.round(x.on / x.t * 100) : 0) + '%',
+      background: 'linear-gradient(90deg,var(--coral),var(--coral-deep))'
+    }
+  })))))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Структура")), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, [['Газели', gaz, '#FF6B47'], ['Ларгусы / каблуки', larg, '#4A8FA8'], ['Исправные', on, '#5DCB94'], ['В ремонте', rem, '#FFB84A']].map(a => /*#__PURE__*/React.createElement("div", {
+    key: a[0],
+    style: {
+      marginBottom: '13px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontSize: '13px',
+      marginBottom: '6px'
+    }
+  }, /*#__PURE__*/React.createElement("span", null, a[0]), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "'JetBrains Mono',monospace",
       fontWeight: 600
     }
-  }, "€", f.price, "/день")), /*#__PURE__*/React.createElement("div", {
-    className: "meta"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "km"
-  }, /*#__PURE__*/React.createElement("b", null, f.km.toLocaleString('ru-RU').replace(',', ' ')), " км"), /*#__PURE__*/React.createElement("span", {
+  }, a[1])), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontFamily: "'JetBrains Mono', monospace",
-      fontSize: 10,
-      color: 'var(--cream-3)',
-      letterSpacing: '.04em'
+      height: '8px',
+      borderRadius: '5px',
+      background: 'var(--bg-4)',
+      overflow: 'hidden'
     }
-  }, f.next))))));
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      width: (total ? Math.round(a[1] / total * 100) : 0) + '%',
+      background: a[2]
+    }
+  }))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: '16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Список ТС"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, total, " машин · тест-данные (Google-таблица)")), /*#__PURE__*/React.createElement("div", {
+    className: "b flush"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "tbl"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Госномер"), /*#__PURE__*/React.createElement("th", null, "Марка / тип"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Статус"), /*#__PURE__*/React.createElement("th", null, "Готовность"), /*#__PURE__*/React.createElement("th", null, "Пробег"), /*#__PURE__*/React.createElement("th", null, "АТП"))), /*#__PURE__*/React.createElement("tbody", null, rows.map(v => /*#__PURE__*/React.createElement("tr", {
+    key: v.plate
+  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    className: "pri"
+  }, v.plate)), /*#__PURE__*/React.createElement("td", null, v.brand, /*#__PURE__*/React.createElement("span", {
+    className: "sec"
+  }, v.type)), /*#__PURE__*/React.createElement("td", null, v.project), /*#__PURE__*/React.createElement("td", null, pill(v.status)), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: v.ready ? 'var(--green)' : 'var(--cream-4)'
+    }
+  }, v.ready ? 'исправна' : '—'), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    className: "id"
+  }, v.mileage.toLocaleString('ru-RU'))), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: 'var(--cream-3)'
+    }
+  }, v.atp))))))));
 }
 
 /* ----------------- CONVERSATIONS ----------------- */
@@ -2848,13 +3027,13 @@ function Login({
       minHeight: '100vh',
       display: 'grid',
       placeItems: 'center',
-      background: 'var(--bg,#0a0c14)',
-      fontFamily: 'inherit'
+      background: '#0B1F33',
+      fontFamily: "'Manrope',sans-serif"
     },
     card: {
       width: 340,
-      background: 'var(--panel,#12141e)',
-      border: '1px solid rgba(255,255,255,.09)',
+      background: '#0E2841',
+      border: '1px solid rgba(245,239,230,.10)',
       borderRadius: 16,
       padding: '34px 30px',
       boxShadow: '0 24px 70px -24px rgba(0,0,0,.75)'
@@ -2863,7 +3042,7 @@ function Login({
       width: 52,
       height: 52,
       borderRadius: 13,
-      background: 'linear-gradient(135deg,#f59e0b,#f43f5e)',
+      background: 'linear-gradient(135deg,#FF6B47,#D74A28)',
       display: 'grid',
       placeItems: 'center',
       color: '#fff',
@@ -2876,13 +3055,13 @@ function Login({
       margin: '0 0 4px',
       fontSize: 20,
       fontWeight: 700,
-      color: 'var(--cream,#eef1f5)'
+      color: '#F5EFE6'
     },
     sub: {
       textAlign: 'center',
       margin: '0 0 24px',
       fontSize: 12.5,
-      color: 'var(--cream-4,#8b93a3)'
+      color: '#8B8377'
     },
     inp: {
       width: '100%',
@@ -2890,9 +3069,9 @@ function Login({
       padding: '12px 14px',
       marginBottom: 12,
       borderRadius: 10,
-      border: '1px solid rgba(255,255,255,.12)',
-      background: 'rgba(255,255,255,.04)',
-      color: '#fff',
+      border: '1px solid rgba(245,239,230,.14)',
+      background: 'rgba(245,239,230,.05)',
+      color: '#F5EFE6',
       fontSize: 14,
       outline: 'none',
       fontFamily: 'inherit'
@@ -2902,7 +3081,7 @@ function Login({
       padding: '13px',
       borderRadius: 10,
       border: 0,
-      background: 'linear-gradient(100deg,#f59e0b,#f43f5e)',
+      background: 'linear-gradient(100deg,#FF6B47,#D74A28)',
       color: '#fff',
       fontWeight: 700,
       fontSize: 14,

@@ -400,40 +400,60 @@ function Bookings(){
 
 /* ----------------- FLEET ----------------- */
 function Fleet(){
+  const [rows,setRows]=useState([]);
+  useEffect(()=>{ fetch('/data/own-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
+  const SC={'На линии':'#5DCB94','Ремонт':'#FFB84A','Капремонт':'#FF6464','Резерв':'#4A8FA8'};
+  const pill=s=>{const c=SC[s]||'#8B8377';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26',whiteSpace:'nowrap'}}>{s}</span>;};
+  const total=rows.length, on=rows.filter(v=>v.status==='На линии').length;
+  const gaz=rows.filter(v=>v.kind==='Газель').length, larg=rows.filter(v=>v.kind==='Ларгус').length;
+  const rem=rows.filter(v=>v.status==='Ремонт'||v.status==='Капремонт').length;
+  const pm={}; rows.forEach(v=>{(pm[v.project]=pm[v.project]||{t:0,on:0});pm[v.project].t++;if(v.status==='На линии')pm[v.project].on++;});
+  const projects=Object.entries(pm).sort((a,b)=>b[1].t-a[1].t);
+  const download=()=>{
+    const head=['Госномер','Марка','Тип','Класс','Проект','Статус','Готовность','Пробег','АТП'];
+    const lines=[head.join(';'),...rows.map(v=>[v.plate,v.brand,v.type,v.kind,v.project,v.status,v.ready?'исправна':'—',v.mileage,v.atp].join(';'))];
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ГФД_собственный_парк_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  };
   return (
     <Fragment>
       <div className="page-head">
-        <div>
-          <h1>Парк · {FLEET.length} машин (выборка)</h1>
-          <div className="sub">► 67 в аренде · 32 свободно · 8 в сервисе</div>
-        </div>
-        <div className="actions">
-          <button>фильтр</button>
-          <button>экспорт</button>
-          <button className="primary">+ авто</button>
-        </div>
+        <div><h1>Собственный автопарк</h1><div className="sub">► {total} ТС · исправных {on} · в ремонте {rem}</div></div>
+        <div className="actions"><button className="primary" onClick={download}>↓ Скачать отчёт</button></div>
       </div>
-
-      <div className="fleet-grid">
-        {FLEET.map(f => (
-          <div key={f.id} className="fleet-card">
-            <div className="top">
-              <div>
-                <div className="model">{f.model}</div>
-                <div className="plate">{f.plate}</div>
-              </div>
-              <span className={'pill ' + (f.status==='rented'?'rented':f.status==='avail'?'avail':'maint')}>{f.status}</span>
+      <div className="stats">
+        <div className="stat"><div className="l">► всего ТС</div><div className="v">{total}</div><div className="d"><span className="lab">собственный парк</span></div></div>
+        <div className="stat"><div className="l">► исправные · на линии</div><div className="v">{on}</div><div className="d"><span className="delta up">{total?Math.round(on/total*100):0}%</span><span className="lab">готовность</span></div></div>
+        <div className="stat"><div className="l">► газели</div><div className="v">{gaz}</div><div className="d"><span className="lab">осн. развоз</span></div></div>
+        <div className="stat"><div className="l">► ларгусы</div><div className="v">{larg}</div><div className="d"><span className="lab">лёгкий развоз</span></div></div>
+        <div className="stat"><div className="l">► в ремонте</div><div className="v">{rem}</div><div className="d"><span className="lab">требуют внимания</span></div></div>
+      </div>
+      <div className="grid-2">
+        <div className="card"><div className="h"><div className="t">По проектам</div><div className="m">на линии / всего</div></div><div className="b">
+          {projects.map(([p,x])=>(
+            <div key={p} style={{marginBottom:'13px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:'13px',marginBottom:'6px'}}><span>{p}</span><span style={{color:'var(--cream-3)',fontFamily:"'JetBrains Mono',monospace"}}>{x.on}/{x.t}</span></div>
+              <div style={{height:'8px',borderRadius:'5px',background:'var(--bg-4)',overflow:'hidden'}}><div style={{height:'100%',width:(x.t?Math.round(x.on/x.t*100):0)+'%',background:'linear-gradient(90deg,var(--coral),var(--coral-deep))'}}></div></div>
             </div>
-            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",letterSpacing:'.04em',marginTop:8}}>
-              <span>{f.cat}</span>
-              <span style={{color:'var(--coral)',fontWeight:600}}>€{f.price}/день</span>
+          ))}
+        </div></div>
+        <div className="card"><div className="h"><div className="t">Структура</div></div><div className="b">
+          {[['Газели',gaz,'#FF6B47'],['Ларгусы / каблуки',larg,'#4A8FA8'],['Исправные',on,'#5DCB94'],['В ремонте',rem,'#FFB84A']].map(a=>(
+            <div key={a[0]} style={{marginBottom:'13px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:'13px',marginBottom:'6px'}}><span>{a[0]}</span><span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>{a[1]}</span></div>
+              <div style={{height:'8px',borderRadius:'5px',background:'var(--bg-4)',overflow:'hidden'}}><div style={{height:'100%',width:(total?Math.round(a[1]/total*100):0)+'%',background:a[2]}}></div></div>
             </div>
-            <div className="meta">
-              <span className="km"><b>{f.km.toLocaleString('ru-RU').replace(',',' ')}</b> км</span>
-              <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,color:'var(--cream-3)',letterSpacing:'.04em'}}>{f.next}</span>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div></div>
+      </div>
+      <div className="card" style={{marginTop:'16px'}}>
+        <div className="h"><div className="t">Список ТС</div><div className="m">{total} машин · тест-данные (Google-таблица)</div></div>
+        <div className="b flush"><table className="tbl">
+          <thead><tr><th>Госномер</th><th>Марка / тип</th><th>Проект</th><th>Статус</th><th>Готовность</th><th>Пробег</th><th>АТП</th></tr></thead>
+          <tbody>{rows.map(v=>(
+            <tr key={v.plate}><td><span className="pri">{v.plate}</span></td><td>{v.brand}<span className="sec">{v.type}</span></td><td>{v.project}</td><td>{pill(v.status)}</td><td style={{color:v.ready?'var(--green)':'var(--cream-4)'}}>{v.ready?'исправна':'—'}</td><td><span className="id">{v.mileage.toLocaleString('ru-RU')}</span></td><td style={{color:'var(--cream-3)'}}>{v.atp}</td></tr>
+          ))}</tbody>
+        </table></div>
       </div>
     </Fragment>
   );
@@ -1489,13 +1509,13 @@ function Login({onOk}){
   const go=()=>{ if(u.trim().toLowerCase()==='admin' && p==='gfd2026'){ sessionStorage.setItem('gfd_auth','1'); onOk(); } else setEr(true); };
   const onKey=e=>{ if(e.key==='Enter') go(); };
   const S={
-    wrap:{minHeight:'100vh',display:'grid',placeItems:'center',background:'var(--bg,#0a0c14)',fontFamily:'inherit'},
-    card:{width:340,background:'var(--panel,#12141e)',border:'1px solid rgba(255,255,255,.09)',borderRadius:16,padding:'34px 30px',boxShadow:'0 24px 70px -24px rgba(0,0,0,.75)'},
-    logo:{width:52,height:52,borderRadius:13,background:'linear-gradient(135deg,#f59e0b,#f43f5e)',display:'grid',placeItems:'center',color:'#fff',fontWeight:800,fontSize:24,margin:'0 auto 18px'},
-    h:{textAlign:'center',margin:'0 0 4px',fontSize:20,fontWeight:700,color:'var(--cream,#eef1f5)'},
-    sub:{textAlign:'center',margin:'0 0 24px',fontSize:12.5,color:'var(--cream-4,#8b93a3)'},
-    inp:{width:'100%',boxSizing:'border-box',padding:'12px 14px',marginBottom:12,borderRadius:10,border:'1px solid rgba(255,255,255,.12)',background:'rgba(255,255,255,.04)',color:'#fff',fontSize:14,outline:'none',fontFamily:'inherit'},
-    btn:{width:'100%',padding:'13px',borderRadius:10,border:0,background:'linear-gradient(100deg,#f59e0b,#f43f5e)',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',marginTop:4},
+    wrap:{minHeight:'100vh',display:'grid',placeItems:'center',background:'#0B1F33',fontFamily:"'Manrope',sans-serif"},
+    card:{width:340,background:'#0E2841',border:'1px solid rgba(245,239,230,.10)',borderRadius:16,padding:'34px 30px',boxShadow:'0 24px 70px -24px rgba(0,0,0,.75)'},
+    logo:{width:52,height:52,borderRadius:13,background:'linear-gradient(135deg,#FF6B47,#D74A28)',display:'grid',placeItems:'center',color:'#fff',fontWeight:800,fontSize:24,margin:'0 auto 18px'},
+    h:{textAlign:'center',margin:'0 0 4px',fontSize:20,fontWeight:700,color:'#F5EFE6'},
+    sub:{textAlign:'center',margin:'0 0 24px',fontSize:12.5,color:'#8B8377'},
+    inp:{width:'100%',boxSizing:'border-box',padding:'12px 14px',marginBottom:12,borderRadius:10,border:'1px solid rgba(245,239,230,.14)',background:'rgba(245,239,230,.05)',color:'#F5EFE6',fontSize:14,outline:'none',fontFamily:'inherit'},
+    btn:{width:'100%',padding:'13px',borderRadius:10,border:0,background:'linear-gradient(100deg,#FF6B47,#D74A28)',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',marginTop:4},
     err:{color:'#f87171',fontSize:12.5,textAlign:'center',marginTop:12}
   };
   return (
