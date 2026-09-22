@@ -445,6 +445,8 @@ function Fleet(){
   const [q,setQ]=useState('');
   const [ktg,setKtg]=useState([]);
   const [kper,setKper]=useState('day');
+  const [collapsed,setCollapsed]=useState(false);
+  const [view,setView]=useState('fleet'); // fleet | docs
   const sort=useSort();
   useEffect(()=>{
     fetch('/data/own-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([]));
@@ -457,9 +459,10 @@ function Fleet(){
   const rem=rows.filter(v=>v.status==='Ремонт'||v.status==='Капремонт').length;
   const pm={}; rows.forEach(v=>{(pm[v.project]=pm[v.project]||{t:0,on:0});pm[v.project].t++;if(v.status==='На линии')pm[v.project].on++;});
   const projects=Object.entries(pm).sort((a,b)=>b[1].t-a[1].t);
+  const dnum=s=>{if(!s)return 0;const p=s.split('.');return +(p[2]+p[1]+p[0]);};
   const fleetRows=sort.apply(
     rows.filter(v=>!q || [v.plate,v.brand,v.type,v.kind,v.project,v.status,v.atp].join(' ').toLowerCase().includes(q.toLowerCase())),
-    {brand:v=>v.brand+' '+v.type, ready:v=>v.ready?1:0}
+    {brand:v=>v.brand+' '+v.type, ready:v=>v.ready?1:0, dk:v=>dnum(v.dk), osago:v=>dnum(v.osago), sk:v=>dnum(v.sk)}
   );
 
   // КТГ (коэффициент технической готовности) — динамика как в ОБЕ2
@@ -476,6 +479,12 @@ function Fleet(){
   const kline=kSeries.map((s,i)=>(i?'L':'M')+kx(i).toFixed(1)+' '+ky(s.v).toFixed(1)).join(' ');
   const karea=kn?kline+` L ${kx(kn-1).toFixed(1)} ${KH-KP} L ${kx(0).toFixed(1)} ${KH-KP} Z`:'';
   const KB=(id,txt)=>(<button className={kper===id?'primary':''} onClick={()=>setKper(id)}>{txt}</button>);
+  // документы: подсветка по сроку (просрочено / скоро / ок)
+  const parseD=s=>{if(!s)return null;const p=s.split('.');return new Date(+p[2],+p[1]-1,+p[0]);};
+  const TODAY=new Date(2026,8,23);
+  const docCell=s=>{ if(!s) return <span style={{color:'var(--cream-4)'}}>нет</span>; const d=parseD(s); const days=d?(d-TODAY)/86400000:0; const c=days<0?'#FF6464':days<30?'#FFB84A':'#5DCB94'; return <span style={{color:c,fontFamily:"'JetBrains Mono', monospace",fontSize:12,whiteSpace:'nowrap'}}>{s}</span>; };
+  const dkExp=rows.filter(v=>{const d=parseD(v.dk);return d&&d<TODAY;}).length;
+  const osExp=rows.filter(v=>{const d=parseD(v.osago);return d&&d<TODAY;}).length;
   const download=()=>{
     const head=['Госномер','Марка','Тип','Класс','Проект','Статус','Готовность','Пробег','АТП'];
     const lines=[head.join(';'),...rows.map(v=>[v.plate,v.brand,v.type,v.kind,v.project,v.status,v.ready?'исправна':'—',v.mileage,v.atp].join(';'))];
@@ -542,26 +551,43 @@ function Fleet(){
 
       <div className="card" style={{marginTop:'16px'}}>
         <div className="h">
-          <div className="t">Список ТС</div>
-          <div className="actions" style={{display:'flex',gap:8,alignItems:'center'}}>
-            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: номер / марка / проект / АТП" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:220}}/>
+          <div className="t">Список ТС {view==='docs' && (dkExp||osExp)?<span style={{color:'#FF6464',fontSize:12,fontWeight:600,marginLeft:8}}>· просрочено: ДК {dkExp} / ОСАГО {osExp}</span>:null}</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            <button className={view==='fleet'?'primary':''} onClick={()=>setView('fleet')}>Транспорт</button>
+            <button className={view==='docs'?'primary':''} onClick={()=>setView('docs')}>Документы</button>
+            {!collapsed && <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: номер / марка / проект / АТП" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:200}}/>}
             <span className="m">{fleetRows.length} / {total}</span>
+            <button onClick={()=>setCollapsed(c=>!c)}>{collapsed?'▸ Показать':'▾ Свернуть'}</button>
           </div>
         </div>
-        <div className="b flush"><table className="tbl">
-          <thead><tr>
-            <SortTh k="plate" sort={sort}>Госномер</SortTh>
-            <SortTh k="brand" sort={sort}>Марка / тип</SortTh>
-            <SortTh k="project" sort={sort}>Проект</SortTh>
-            <SortTh k="status" sort={sort}>Статус</SortTh>
-            <SortTh k="ready" sort={sort}>Готовность</SortTh>
-            <SortTh k="mileage" sort={sort}>Пробег</SortTh>
-            <SortTh k="atp" sort={sort}>АТП</SortTh>
-          </tr></thead>
-          <tbody>{fleetRows.map(v=>(
+        {!collapsed && <div className="b flush" style={{overflowX:'auto'}}><table className="tbl">
+          {view==='fleet' ? (
+            <thead><tr>
+              <SortTh k="plate" sort={sort}>Госномер</SortTh>
+              <SortTh k="brand" sort={sort}>Марка / тип</SortTh>
+              <SortTh k="project" sort={sort}>Проект</SortTh>
+              <SortTh k="status" sort={sort}>Статус</SortTh>
+              <SortTh k="ready" sort={sort}>Готовность</SortTh>
+              <SortTh k="mileage" sort={sort}>Пробег</SortTh>
+              <SortTh k="atp" sort={sort}>АТП</SortTh>
+            </tr></thead>
+          ) : (
+            <thead><tr>
+              <SortTh k="plate" sort={sort}>Госномер</SortTh>
+              <SortTh k="brand" sort={sort}>Марка / тип</SortTh>
+              <SortTh k="dk" sort={sort}>Диагностическая карта</SortTh>
+              <SortTh k="osago" sort={sort}>ОСАГО (страховка)</SortTh>
+              <SortTh k="sk" sort={sort}>Пропуск СК</SortTh>
+              <SortTh k="status" sort={sort}>Статус</SortTh>
+            </tr></thead>
+          )}
+          <tbody>{fleetRows.map(v=> view==='fleet' ? (
             <tr key={v.plate}><td><span className="pri">{v.plate}</span></td><td>{v.brand}<span className="sec">{v.type}</span></td><td>{v.project}</td><td>{pill(v.status)}</td><td style={{color:v.ready?'var(--green)':'var(--cream-4)'}}>{v.ready?'исправна':'—'}</td><td><span className="id">{v.mileage.toLocaleString('ru-RU')}</span></td><td style={{color:'var(--cream-3)'}}>{v.atp}</td></tr>
+          ) : (
+            <tr key={v.plate}><td><span className="pri">{v.plate}</span></td><td>{v.brand}<span className="sec">{v.type}</span></td><td>{docCell(v.dk)}</td><td>{docCell(v.osago)}</td><td>{docCell(v.sk)}</td><td>{pill(v.status)}</td></tr>
           ))}</tbody>
-        </table></div>
+        </table></div>}
+        {collapsed && <div className="b" style={{color:'var(--cream-3)',fontSize:13}}>Список скрыт · {total} ТС. Нажмите «Показать».</div>}
       </div>
     </Fragment>
   );
@@ -852,51 +878,65 @@ function SyncPage(){
 
 /* ----------------- SETTINGS ----------------- */
 function Settings(){
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(KEY_STORAGE) || '');
-  const [saved, setSaved] = useState(false);
-  function save(){
-    if(apiKey.trim()) localStorage.setItem(KEY_STORAGE, apiKey.trim());
-    else localStorage.removeItem(KEY_STORAGE);
-    setSaved(true);
-    setTimeout(()=>{setSaved(false); window.location.reload();}, 700);
-  }
+  const [sched,setSched]=useState({times:[],enabled:true});
+  const [schedStatus,setSchedStatus]=useState('');
+  useEffect(()=>{ fetch('/api/schedule').then(r=>r.json()).then(d=>{ if(d&&Array.isArray(d.times)) setSched({times:d.times,enabled:d.enabled!==false}); }).catch(()=>{}); },[]);
+  const setTime=(i,v)=>setSched(s=>({...s,times:s.times.map((t,j)=>j===i?v:t)}));
+  const addTime=()=>setSched(s=>({...s,times:[...s.times,'09:00']}));
+  const delTime=i=>setSched(s=>({...s,times:s.times.filter((_,j)=>j!==i)}));
+  const saveSched=async()=>{
+    setSchedStatus('…');
+    try{ const r=await fetch('/api/schedule',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({times:sched.times.filter(Boolean),enabled:sched.enabled})}); const o=await r.json(); setSchedStatus(o.ok?'✓ сохранено':('⚠ '+(o.error||'ошибка'))); }
+    catch(e){ setSchedStatus('⚠ сеть'); }
+    setTimeout(()=>setSchedStatus(''),4000);
+  };
   return (
     <Fragment>
       <div className="page-head">
         <div>
           <h1>Настройки</h1>
-          <div className="sub">► интеграции · API-ключи · команда</div>
+          <div className="sub">► расписание отчётов · AI-движок · интеграции</div>
         </div>
       </div>
 
       <div className="grid-2">
         <div className="card">
-          <div className="h"><div className="t">AI-движок · Claude</div><div className="m">опубликовать ключ</div></div>
+          <div className="h"><div className="t">Отправка отчётов · расписание</div><div className="m">@gfd_otchet_bot</div></div>
           <div className="b">
-            <div className="field">
-              <label>API key Anthropic</label>
-              <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-…" />
-              <div className="help">Ключ хранится в браузере (localStorage), отправляется напрямую в Anthropic API. <a href="https://console.anthropic.com/settings/keys" target="_blank">получить ключ →</a></div>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+              <button className={sched.enabled?'primary':''} onClick={()=>setSched(s=>({...s,enabled:!s.enabled}))}>{sched.enabled?'● Включено':'○ Выключено'}</button>
+              <span style={{color:'var(--cream-3)',fontSize:12}}>сводный отчёт в Telegram руководителю</span>
+            </div>
+            <label style={{fontSize:12,color:'var(--cream-2)'}}>Время отправки (МСК)</label>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,margin:'8px 0 12px'}}>
+              {sched.times.map((t,i)=>(
+                <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4,background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,padding:'2px 4px 2px 8px'}}>
+                  <input type="time" value={t} onChange={e=>setTime(i,e.target.value)} style={{background:'transparent',border:0,color:'var(--cream)',fontSize:13,colorScheme:'dark'}}/>
+                  <button onClick={()=>delTime(i)} style={{padding:'2px 8px'}}>×</button>
+                </span>
+              ))}
+              <button onClick={addTime}>+ время</button>
             </div>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
-              <button className="primary" onClick={save}>{saved ? '✓ сохранено' : 'сохранить'}</button>
-              <button onClick={()=>{setApiKey(''); localStorage.removeItem(KEY_STORAGE); window.location.reload();}}>очистить</button>
+              <button className="primary" onClick={saveSched}>Сохранить расписание</button>
+              {schedStatus && <span style={{fontSize:12,color:schedStatus[0]==='✓'?'var(--green)':schedStatus==='…'?'var(--cream-3)':'var(--warn)'}}>{schedStatus}</span>}
             </div>
+            <div className="help" style={{marginTop:10}}>Сервер проверяет расписание ежеминутно (VPS cron): в указанное время бот присылает сводный отчёт. Работает реально.</div>
           </div>
         </div>
 
         <div className="card">
-          <div className="h"><div className="t">Параметры модели</div></div>
+          <div className="h"><div className="t">AI-движок · Claude</div><div className="m">подключён на сервере</div></div>
           <div className="b">
+            <div style={{marginBottom:14}}><span className="pill avail">● ключ в защищённом окружении</span></div>
             <div className="field">
               <label>модель AI-агента (tool use)</label>
               <input value="claude-sonnet-5" readOnly />
-              <div className="help">Работает с данными автопарка через инструменты, готовит отчёты.</div>
+              <div className="help">Ключ Anthropic хранится в env сервера (Vercel), в браузере не виден — как в ОБЕ2. Агент ходит через прокси /api/ai-chat.</div>
             </div>
             <div className="field">
               <label>модель быстрых сводок</label>
               <input value="claude-haiku-4-5" readOnly />
-              <div className="help">Быстрые ответы и короткие сводки по парку и маршрутам.</div>
             </div>
           </div>
         </div>
@@ -1042,10 +1082,10 @@ function execTool(name, input){
 }
 /* call Claude with tools (non-streaming for simplicity in tool loop) */
 async function callClaudeWithTools({messages, system, tools, model='claude-sonnet-5', max_tokens=2000}){
-  const key = (localStorage.getItem(KEY_STORAGE) || '').trim();
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  // Ключ — на сервере (env Vercel). Браузер ходит через свой прокси /api/ai-chat.
+  const r = await fetch('/api/ai-chat', {
     method:'POST',
-    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+    headers:{'content-type':'application/json'},
     body: JSON.stringify({model, max_tokens, system, messages, tools})
   });
   if(!r.ok){
@@ -1244,7 +1284,7 @@ function AssistantChat(){
     appendItem({kind:'user', text});
 
     if(!GFD.own.length) await loadGFD();
-    const isLive = (localStorage.getItem(KEY_STORAGE)||'').startsWith('sk-ant-');
+    const isLive = true; // ключ на сервере (env Vercel) — агент всегда работает вживую
 
     const onEvent = (e) => {
       if(e.type === 'user') return;
@@ -1314,7 +1354,7 @@ function AssistantChat(){
               <div className="asst-greeting">
                 <h4>Чем помочь?</h4>
                 <p>Я работаю с системой учёта автопарка: смотрю собственный парк и частников, магазины и маршруты, статистику и кадры; считаю метрики; готовлю отчёты и ставлю их на отправку в Telegram.</p>
-                <p style={{marginTop:8}}>Все вызовы происходят через <code>tool use</code> — увидите карточки запросов с входными данными и результатами прямо в чате. Чтобы это работало по-настоящему — вставьте ключ Anthropic в Настройках.</p>
+                <p style={{marginTop:8}}>Все вызовы происходят через <code>tool use</code> — увидите карточки запросов с входными данными и результатами прямо в чате. Работает вживую: ключ Claude подключён на сервере.</p>
               </div>
             )}
             {messages.map((m, i) => {
@@ -1454,13 +1494,7 @@ function Reports(){
 
 function App(){
   const [page, setPage] = useState('dash');
-  const [mode, setMode] = useState(false);
-  useEffect(() => {
-    setMode((localStorage.getItem(KEY_STORAGE)||'').startsWith('sk-ant-'));
-    function onStorage(){ setMode((localStorage.getItem(KEY_STORAGE)||'').startsWith('sk-ant-')); }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  const [mode] = useState(true); // ключ Claude на сервере — агент всегда подключён
 
   const CRUMB = {
     dash: ['ГФД CRM', 'Главный дашборд'],

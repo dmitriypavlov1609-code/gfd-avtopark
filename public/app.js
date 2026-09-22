@@ -1035,6 +1035,8 @@ function Fleet() {
   const [q, setQ] = useState('');
   const [ktg, setKtg] = useState([]);
   const [kper, setKper] = useState('day');
+  const [collapsed, setCollapsed] = useState(false);
+  const [view, setView] = useState('fleet'); // fleet | docs
   const sort = useSort();
   useEffect(() => {
     fetch('/data/own-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
@@ -1075,9 +1077,17 @@ function Fleet() {
     if (v.status === 'На линии') pm[v.project].on++;
   });
   const projects = Object.entries(pm).sort((a, b) => b[1].t - a[1].t);
+  const dnum = s => {
+    if (!s) return 0;
+    const p = s.split('.');
+    return +(p[2] + p[1] + p[0]);
+  };
   const fleetRows = sort.apply(rows.filter(v => !q || [v.plate, v.brand, v.type, v.kind, v.project, v.status, v.atp].join(' ').toLowerCase().includes(q.toLowerCase())), {
     brand: v => v.brand + ' ' + v.type,
-    ready: v => v.ready ? 1 : 0
+    ready: v => v.ready ? 1 : 0,
+    dk: v => dnum(v.dk),
+    osago: v => dnum(v.osago),
+    sk: v => dnum(v.sk)
   });
 
   // КТГ (коэффициент технической готовности) — динамика как в ОБЕ2
@@ -1127,6 +1137,39 @@ function Fleet() {
     className: kper === id ? 'primary' : '',
     onClick: () => setKper(id)
   }, txt);
+  // документы: подсветка по сроку (просрочено / скоро / ок)
+  const parseD = s => {
+    if (!s) return null;
+    const p = s.split('.');
+    return new Date(+p[2], +p[1] - 1, +p[0]);
+  };
+  const TODAY = new Date(2026, 8, 23);
+  const docCell = s => {
+    if (!s) return /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: 'var(--cream-4)'
+      }
+    }, "нет");
+    const d = parseD(s);
+    const days = d ? (d - TODAY) / 86400000 : 0;
+    const c = days < 0 ? '#FF6464' : days < 30 ? '#FFB84A' : '#5DCB94';
+    return /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: c,
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 12,
+        whiteSpace: 'nowrap'
+      }
+    }, s);
+  };
+  const dkExp = rows.filter(v => {
+    const d = parseD(v.dk);
+    return d && d < TODAY;
+  }).length;
+  const osExp = rows.filter(v => {
+    const d = parseD(v.osago);
+    return d && d < TODAY;
+  }).length;
   const download = () => {
     const head = ['Госномер', 'Марка', 'Тип', 'Класс', 'Проект', 'Статус', 'Готовность', 'Пробег', 'АТП'];
     const lines = [head.join(';'), ...rows.map(v => [v.plate, v.brand, v.type, v.kind, v.project, v.status, v.ready ? 'исправна' : '—', v.mileage, v.atp].join(';'))];
@@ -1405,14 +1448,28 @@ function Fleet() {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "Список ТС"), /*#__PURE__*/React.createElement("div", {
+  }, "Список ТС ", view === 'docs' && (dkExp || osExp) ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#FF6464',
+      fontSize: 12,
+      fontWeight: 600,
+      marginLeft: 8
+    }
+  }, "· просрочено: ДК ", dkExp, " / ОСАГО ", osExp) : null), /*#__PURE__*/React.createElement("div", {
     className: "actions",
     style: {
       display: 'flex',
       gap: 8,
-      alignItems: 'center'
+      alignItems: 'center',
+      flexWrap: 'wrap'
     }
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: view === 'fleet' ? 'primary' : '',
+    onClick: () => setView('fleet')
+  }, "Транспорт"), /*#__PURE__*/React.createElement("button", {
+    className: view === 'docs' ? 'primary' : '',
+    onClick: () => setView('docs')
+  }, "Документы"), !collapsed && /*#__PURE__*/React.createElement("input", {
     value: q,
     onChange: e => setQ(e.target.value),
     placeholder: "поиск: номер / марка / проект / АТП",
@@ -1423,15 +1480,20 @@ function Fleet() {
       color: 'var(--cream)',
       padding: '6px 10px',
       fontSize: 12,
-      minWidth: 220
+      minWidth: 200
     }
   }), /*#__PURE__*/React.createElement("span", {
     className: "m"
-  }, fleetRows.length, " / ", total))), /*#__PURE__*/React.createElement("div", {
-    className: "b flush"
+  }, fleetRows.length, " / ", total), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setCollapsed(c => !c)
+  }, collapsed ? '▸ Показать' : '▾ Свернуть'))), !collapsed && /*#__PURE__*/React.createElement("div", {
+    className: "b flush",
+    style: {
+      overflowX: 'auto'
+    }
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+  }, view === 'fleet' ? /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
     k: "plate",
     sort: sort
   }, "Госномер"), /*#__PURE__*/React.createElement(SortTh, {
@@ -1452,7 +1514,25 @@ function Fleet() {
   }, "Пробег"), /*#__PURE__*/React.createElement(SortTh, {
     k: "atp",
     sort: sort
-  }, "АТП"))), /*#__PURE__*/React.createElement("tbody", null, fleetRows.map(v => /*#__PURE__*/React.createElement("tr", {
+  }, "АТП"))) : /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+    k: "plate",
+    sort: sort
+  }, "Госномер"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "brand",
+    sort: sort
+  }, "Марка / тип"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "dk",
+    sort: sort
+  }, "Диагностическая карта"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "osago",
+    sort: sort
+  }, "ОСАГО (страховка)"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "sk",
+    sort: sort
+  }, "Пропуск СК"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "status",
+    sort: sort
+  }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, fleetRows.map(v => view === 'fleet' ? /*#__PURE__*/React.createElement("tr", {
     key: v.plate
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "pri"
@@ -1468,7 +1548,19 @@ function Fleet() {
     style: {
       color: 'var(--cream-3)'
     }
-  }, v.atp))))))));
+  }, v.atp)) : /*#__PURE__*/React.createElement("tr", {
+    key: v.plate
+  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    className: "pri"
+  }, v.plate)), /*#__PURE__*/React.createElement("td", null, v.brand, /*#__PURE__*/React.createElement("span", {
+    className: "sec"
+  }, v.type)), /*#__PURE__*/React.createElement("td", null, docCell(v.dk)), /*#__PURE__*/React.createElement("td", null, docCell(v.osago)), /*#__PURE__*/React.createElement("td", null, docCell(v.sk)), /*#__PURE__*/React.createElement("td", null, pill(v.status))))))), collapsed && /*#__PURE__*/React.createElement("div", {
+    className: "b",
+    style: {
+      color: 'var(--cream-3)',
+      fontSize: 13
+    }
+  }, "Список скрыт · ", total, " ТС. Нажмите «Показать».")));
 }
 
 /* ----------------- КАДРЫ (кандидаты) ----------------- */
@@ -2215,21 +2307,56 @@ function SyncPage() {
 
 /* ----------------- SETTINGS ----------------- */
 function Settings() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(KEY_STORAGE) || '');
-  const [saved, setSaved] = useState(false);
-  function save() {
-    if (apiKey.trim()) localStorage.setItem(KEY_STORAGE, apiKey.trim());else localStorage.removeItem(KEY_STORAGE);
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      window.location.reload();
-    }, 700);
-  }
+  const [sched, setSched] = useState({
+    times: [],
+    enabled: true
+  });
+  const [schedStatus, setSchedStatus] = useState('');
+  useEffect(() => {
+    fetch('/api/schedule').then(r => r.json()).then(d => {
+      if (d && Array.isArray(d.times)) setSched({
+        times: d.times,
+        enabled: d.enabled !== false
+      });
+    }).catch(() => {});
+  }, []);
+  const setTime = (i, v) => setSched(s => ({
+    ...s,
+    times: s.times.map((t, j) => j === i ? v : t)
+  }));
+  const addTime = () => setSched(s => ({
+    ...s,
+    times: [...s.times, '09:00']
+  }));
+  const delTime = i => setSched(s => ({
+    ...s,
+    times: s.times.filter((_, j) => j !== i)
+  }));
+  const saveSched = async () => {
+    setSchedStatus('…');
+    try {
+      const r = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          times: sched.times.filter(Boolean),
+          enabled: sched.enabled
+        })
+      });
+      const o = await r.json();
+      setSchedStatus(o.ok ? '✓ сохранено' : '⚠ ' + (o.error || 'ошибка'));
+    } catch (e) {
+      setSchedStatus('⚠ сеть');
+    }
+    setTimeout(() => setSchedStatus(''), 4000);
+  };
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Настройки"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► интеграции · API-ключи · команда"))), /*#__PURE__*/React.createElement("div", {
+  }, "► расписание отчётов · AI-движок · интеграции"))), /*#__PURE__*/React.createElement("div", {
     className: "grid-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -2237,23 +2364,70 @@ function Settings() {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "AI-движок · Claude"), /*#__PURE__*/React.createElement("div", {
+  }, "Отправка отчётов · расписание"), /*#__PURE__*/React.createElement("div", {
     className: "m"
-  }, "опубликовать ключ")), /*#__PURE__*/React.createElement("div", {
+  }, "@gfd_otchet_bot")), /*#__PURE__*/React.createElement("div", {
     className: "b"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "field"
-  }, /*#__PURE__*/React.createElement("label", null, "API key Anthropic"), /*#__PURE__*/React.createElement("input", {
-    type: "password",
-    value: apiKey,
-    onChange: e => setApiKey(e.target.value),
-    placeholder: "sk-ant-…"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "help"
-  }, "Ключ хранится в браузере (localStorage), отправляется напрямую в Anthropic API. ", /*#__PURE__*/React.createElement("a", {
-    href: "https://console.anthropic.com/settings/keys",
-    target: "_blank"
-  }, "получить ключ →"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: sched.enabled ? 'primary' : '',
+    onClick: () => setSched(s => ({
+      ...s,
+      enabled: !s.enabled
+    }))
+  }, sched.enabled ? '● Включено' : '○ Выключено'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-3)',
+      fontSize: 12
+    }
+  }, "сводный отчёт в Telegram руководителю")), /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-2)'
+    }
+  }, "Время отправки (МСК)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 8,
+      margin: '8px 0 12px'
+    }
+  }, sched.times.map((t, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      padding: '2px 4px 2px 8px'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    value: t,
+    onChange: e => setTime(i, e.target.value),
+    style: {
+      background: 'transparent',
+      border: 0,
+      color: 'var(--cream)',
+      fontSize: 13,
+      colorScheme: 'dark'
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => delTime(i),
+    style: {
+      padding: '2px 8px'
+    }
+  }, "×"))), /*#__PURE__*/React.createElement("button", {
+    onClick: addTime
+  }, "+ время")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 8,
@@ -2261,36 +2435,46 @@ function Settings() {
     }
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
-    onClick: save
-  }, saved ? '✓ сохранено' : 'сохранить'), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setApiKey('');
-      localStorage.removeItem(KEY_STORAGE);
-      window.location.reload();
+    onClick: saveSched
+  }, "Сохранить расписание"), schedStatus && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: schedStatus[0] === '✓' ? 'var(--green)' : schedStatus === '…' ? 'var(--cream-3)' : 'var(--warn)'
     }
-  }, "очистить")))), /*#__PURE__*/React.createElement("div", {
+  }, schedStatus)), /*#__PURE__*/React.createElement("div", {
+    className: "help",
+    style: {
+      marginTop: 10
+    }
+  }, "Сервер проверяет расписание ежеминутно (VPS cron): в указанное время бот присылает сводный отчёт. Работает реально."))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "Параметры модели")), /*#__PURE__*/React.createElement("div", {
+  }, "AI-движок · Claude"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, "подключён на сервере")), /*#__PURE__*/React.createElement("div", {
     className: "b"
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pill avail"
+  }, "● ключ в защищённом окружении")), /*#__PURE__*/React.createElement("div", {
     className: "field"
   }, /*#__PURE__*/React.createElement("label", null, "модель AI-агента (tool use)"), /*#__PURE__*/React.createElement("input", {
     value: "claude-sonnet-5",
     readOnly: true
   }), /*#__PURE__*/React.createElement("div", {
     className: "help"
-  }, "Работает с данными автопарка через инструменты, готовит отчёты.")), /*#__PURE__*/React.createElement("div", {
+  }, "Ключ Anthropic хранится в env сервера (Vercel), в браузере не виден — как в ОБЕ2. Агент ходит через прокси /api/ai-chat.")), /*#__PURE__*/React.createElement("div", {
     className: "field"
   }, /*#__PURE__*/React.createElement("label", null, "модель быстрых сводок"), /*#__PURE__*/React.createElement("input", {
     value: "claude-haiku-4-5",
     readOnly: true
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "help"
-  }, "Быстрые ответы и короткие сводки по парку и маршрутам."))))), /*#__PURE__*/React.createElement("div", {
+  }))))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 14
     }
@@ -2633,13 +2817,10 @@ async function callClaudeWithTools({
   model = 'claude-sonnet-5',
   max_tokens = 2000
 }) {
-  const key = (localStorage.getItem(KEY_STORAGE) || '').trim();
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  // Ключ — на сервере (env Vercel). Браузер ходит через свой прокси /api/ai-chat.
+  const r = await fetch('/api/ai-chat', {
     method: 'POST',
     headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
       'content-type': 'application/json'
     },
     body: JSON.stringify({
@@ -2999,7 +3180,8 @@ function AssistantChat() {
       text
     });
     if (!GFD.own.length) await loadGFD();
-    const isLive = (localStorage.getItem(KEY_STORAGE) || '').startsWith('sk-ant-');
+    const isLive = true; // ключ на сервере (env Vercel) — агент всегда работает вживую
+
     const onEvent = e => {
       if (e.type === 'user') return;
       if (e.type === 'thinking') {
@@ -3106,7 +3288,7 @@ function AssistantChat() {
     style: {
       marginTop: 8
     }
-  }, "Все вызовы происходят через ", /*#__PURE__*/React.createElement("code", null, "tool use"), " — увидите карточки запросов с входными данными и результатами прямо в чате. Чтобы это работало по-настоящему — вставьте ключ Anthropic в Настройках.")), messages.map((m, i) => {
+  }, "Все вызовы происходят через ", /*#__PURE__*/React.createElement("code", null, "tool use"), " — увидите карточки запросов с входными данными и результатами прямо в чате. Работает вживую: ключ Claude подключён на сервере.")), messages.map((m, i) => {
     if (m.kind === 'user') return /*#__PURE__*/React.createElement("div", {
       key: i,
       className: "asst-msg user"
@@ -3365,15 +3547,8 @@ function Reports() {
 }
 function App() {
   const [page, setPage] = useState('dash');
-  const [mode, setMode] = useState(false);
-  useEffect(() => {
-    setMode((localStorage.getItem(KEY_STORAGE) || '').startsWith('sk-ant-'));
-    function onStorage() {
-      setMode((localStorage.getItem(KEY_STORAGE) || '').startsWith('sk-ant-'));
-    }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  const [mode] = useState(true); // ключ Claude на сервере — агент всегда подключён
+
   const CRUMB = {
     dash: ['ГФД CRM', 'Главный дашборд'],
     asst: ['ГФД CRM', 'AI агент'],
