@@ -15,16 +15,17 @@ const VIEWPORTS = [
   { name: "tablet", w: 768, h: 1024 },
   { name: "mobile", w: 390, h: 844 },
 ];
-const TABS = ["own", "hired", "stores", "stats"];
+const TABS = ["overview", "own", "hired", "stores", "stats"];
 
 // в браузере: найти пересечения видимых блоков (не вложенных, не намеренные оверлеи)
 const OVERLAP_FN = `() => {
-  const SEL = ['.rail','.nav','.hero-main','.hero-side','.kpi','.card','.store','.toolbar','.tablewrap','.ring','.barrow','footer','.btn','h1','table'];
+  const SEL = ['.sidebar','.topbar','.nav','.kpi','.panel','.ph','.pb','.store','.toolbar','.tablewrap','.barcol','.fitem','.prow','.task','.search','.chip','.user','h1'];
   const els = [...new Set(SEL.flatMap(s => [...document.querySelectorAll(s)]))];
   const vis = els.filter(e => {
     const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
     if (r.width < 4 || r.height < 4) return false;
     if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return false;
+    if (r.right<=0 || r.left>=window.innerWidth || r.bottom<=0 || r.top>=window.innerHeight) return false;
     return true;
   });
   const rect = e => e.getBoundingClientRect();
@@ -35,13 +36,14 @@ const OVERLAP_FN = `() => {
     const A=vis[i], B=vis[j];
     if (contains(A,B)) continue;
     const cs=getComputedStyle(A), ds=getComputedStyle(B);
+    // намеренные оверлеи (absolute/fixed/sticky) пропускаем, кроме случая наезда на текст h1/p
     const intentional = p => ['absolute','fixed','sticky'].includes(p);
     const ra=rect(A), rb=rect(B);
     const ox = Math.max(0, Math.min(ra.right,rb.right)-Math.max(ra.left,rb.left));
     const oy = Math.max(0, Math.min(ra.bottom,rb.bottom)-Math.max(ra.top,rb.top));
     if (ox<=2 || oy<=2) continue;
     const area = ox*oy, minA = Math.min(ra.width*ra.height, rb.width*rb.height);
-    if (area/minA < 0.12) continue;
+    if (area/minA < 0.12) continue; // незначительное касание игнор
     if (intentional(cs.position)||intentional(ds.position)) continue;
     out.push({a:desc(A), b:desc(B), overlap:Math.round(area), pct:Math.round(area/minA*100),
       ra:{x:Math.round(ra.x),y:Math.round(ra.y),w:Math.round(ra.width),h:Math.round(ra.height)}});
@@ -62,7 +64,7 @@ const run = async () => {
     await page.goto(URL, { waitUntil: "networkidle" }).catch(()=>{});
     const tabsReport = [];
     for (const tab of TABS) {
-      await page.evaluate(t => { const b=document.querySelector('.nav[data-view="'+t+'"]'); if(b) b.click(); }, tab).catch(()=>{});
+      await page.evaluate(t => { const b=document.querySelector('.nav[data-page="'+t+'"]'); if(b) b.click(); }, tab).catch(()=>{});
       await page.waitForTimeout(350);
       const overflow = await page.evaluate(() => ({
         docW: document.documentElement.scrollWidth, winW: window.innerWidth,
@@ -78,11 +80,12 @@ const run = async () => {
   }
   await browser.close();
 
+  // краткий вывод
   let issues = 0;
   for (const v of report.viewports) {
     for (const t of v.tabs) {
       if (t.horizOverflow) { issues++; console.log(`⚠ [${v.viewport} · ${t.tab}] горизонтальный оверфлоу: +${t.horizOverflow}px`); }
-      for (const o of t.overlaps) { issues++; console.log(`⚠ [${v.viewport} · ${t.tab}] НАЛОЖЕНИЕ ${o.pct}%: ${o.a}  ✕  ${o.b}`); }
+      for (const o of t.overlaps) { issues++; console.log(`⚠ [${v.viewport} · ${t.tab}] НАЛОЖЕНИЕ ${o.pct}%: ${o.a}  ✕  ${o.b}  @ ${JSON.stringify(o.ra)}`); }
     }
     if (v.consoleErrors.length) { issues++; console.log(`⚠ [${v.viewport}] console errors: ${v.consoleErrors.slice(0,4).join(" | ")}`); }
     if (v.failedRequests.length) { issues++; console.log(`⚠ [${v.viewport}] failed: ${v.failedRequests.slice(0,4).join(" | ")}`); }
