@@ -1,0 +1,4 @@
+.vercel
+deploy.out
+node_modules
+*.log
