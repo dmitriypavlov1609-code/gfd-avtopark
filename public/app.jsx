@@ -130,6 +130,29 @@ function Topbar({crumb, mode, actions}){
   );
 }
 
+/* ----------------- сортировка таблиц ----------------- */
+function useSort(initKey, initDir){
+  const [sortKey,setSortKey]=useState(initKey||null);
+  const [dir,setDir]=useState(initDir||'asc');
+  const onSort=k=>{ if(sortKey===k){ setDir(d=>d==='asc'?'desc':'asc'); } else { setSortKey(k); setDir('asc'); } };
+  const apply=(rows,acc)=>{
+    if(!sortKey) return rows;
+    const get=(acc&&acc[sortKey])||(r=>r[sortKey]);
+    const s=[...rows].sort((a,b)=>{
+      const va=get(a), vb=get(b);
+      if(typeof va==='number' && typeof vb==='number') return va-vb;
+      if(typeof va==='boolean' && typeof vb==='boolean') return (va?1:0)-(vb?1:0);
+      return String(va==null?'':va).localeCompare(String(vb==null?'':vb),'ru',{numeric:true});
+    });
+    return dir==='asc'?s:s.reverse();
+  };
+  return {sortKey,dir,onSort,apply};
+}
+function SortTh({k,sort,children,style}){
+  const active=sort.sortKey===k;
+  return <th onClick={()=>sort.onSort(k)} style={{cursor:'pointer',userSelect:'none',whiteSpace:'nowrap',color:active?'var(--coral)':undefined,...(style||{})}}>{children}<span style={{opacity:active?1:.35,marginLeft:4,fontSize:10}}>{active?(sort.dir==='asc'?'▲':'▼'):'⇅'}</span></th>;
+}
+
 /* ----------------- DASHBOARD ----------------- */
 function Dashboard({setPage}){
   const [own,setOwn]=useState([]);
@@ -302,6 +325,7 @@ function Bookings(){
   const [rows,setRows]=useState([]);
   const [filter,setFilter]=useState('all');
   const [q,setQ]=useState('');
+  const sort=useSort();
   useEffect(()=>{ fetch('/data/hired-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
 
   const SL={active:'Активен',soon:'Истекает',end:'Завершён'};
@@ -313,11 +337,11 @@ function Bookings(){
   const active=rows.filter(r=>r.status==='active').length;
   const doneRoutes=rows.reduce((s,r)=>s+(r.routesDone||0),0);
 
-  const filtered=rows.filter(r=>{
+  const filtered=sort.apply(rows.filter(r=>{
     const okF = filter==='all' || (filter==='online'?r.onLine:r.status===filter);
     const okQ = !q || (r.plate+' '+r.contractor+' '+(r.projects||[]).join(' ')).toLowerCase().includes(q.toLowerCase());
     return okF && okQ;
-  });
+  }), {contractor:r=>r.contractor, routesDone:r=>r.routesDone, projects:r=>(r.projects||[]).join(', '), onLine:r=>r.onLine?1:0});
 
   const download=()=>{
     const head=['Госномер','Контрагент','Телефон','Дата регистрации','Маршрутов выполнено','Проекты','Статус','На линии','Ставка'];
@@ -357,7 +381,7 @@ function Bookings(){
         <div className="b flush">
           <table className="tbl">
             <thead><tr>
-              <th>Госномер</th><th>Контрагент</th><th>Регистрация</th><th>Маршрутов</th><th>Проекты</th><th>Ставка</th><th>На линии</th><th>Статус</th>
+              <SortTh k="plate" sort={sort}>Госномер</SortTh><SortTh k="contractor" sort={sort}>Контрагент</SortTh><SortTh k="registered" sort={sort}>Регистрация</SortTh><SortTh k="routesDone" sort={sort}>Маршрутов</SortTh><SortTh k="projects" sort={sort}>Проекты</SortTh><SortTh k="rate" sort={sort}>Ставка</SortTh><SortTh k="onLine" sort={sort}>На линии</SortTh><SortTh k="status" sort={sort}>Статус</SortTh>
             </tr></thead>
             <tbody>
               {filtered.map((r,i)=>(
@@ -383,6 +407,8 @@ function Bookings(){
 /* ----------------- FLEET ----------------- */
 function Fleet(){
   const [rows,setRows]=useState([]);
+  const [q,setQ]=useState('');
+  const sort=useSort();
   useEffect(()=>{ fetch('/data/own-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
   const SC={'На линии':'#5DCB94','Ремонт':'#FFB84A','Капремонт':'#FF6464','Резерв':'#4A8FA8'};
   const pill=s=>{const c=SC[s]||'#8B8377';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26',whiteSpace:'nowrap'}}>{s}</span>;};
@@ -391,6 +417,10 @@ function Fleet(){
   const rem=rows.filter(v=>v.status==='Ремонт'||v.status==='Капремонт').length;
   const pm={}; rows.forEach(v=>{(pm[v.project]=pm[v.project]||{t:0,on:0});pm[v.project].t++;if(v.status==='На линии')pm[v.project].on++;});
   const projects=Object.entries(pm).sort((a,b)=>b[1].t-a[1].t);
+  const fleetRows=sort.apply(
+    rows.filter(v=>!q || [v.plate,v.brand,v.type,v.kind,v.project,v.status,v.atp].join(' ').toLowerCase().includes(q.toLowerCase())),
+    {brand:v=>v.brand+' '+v.type, ready:v=>v.ready?1:0}
+  );
   const download=()=>{
     const head=['Госномер','Марка','Тип','Класс','Проект','Статус','Готовность','Пробег','АТП'];
     const lines=[head.join(';'),...rows.map(v=>[v.plate,v.brand,v.type,v.kind,v.project,v.status,v.ready?'исправна':'—',v.mileage,v.atp].join(';'))];
@@ -429,10 +459,24 @@ function Fleet(){
         </div></div>
       </div>
       <div className="card" style={{marginTop:'16px'}}>
-        <div className="h"><div className="t">Список ТС</div><div className="m">{total} машин · тест-данные (Google-таблица)</div></div>
+        <div className="h">
+          <div className="t">Список ТС</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center'}}>
+            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: номер / марка / проект / АТП" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:220}}/>
+            <span className="m">{fleetRows.length} / {total}</span>
+          </div>
+        </div>
         <div className="b flush"><table className="tbl">
-          <thead><tr><th>Госномер</th><th>Марка / тип</th><th>Проект</th><th>Статус</th><th>Готовность</th><th>Пробег</th><th>АТП</th></tr></thead>
-          <tbody>{rows.map(v=>(
+          <thead><tr>
+            <SortTh k="plate" sort={sort}>Госномер</SortTh>
+            <SortTh k="brand" sort={sort}>Марка / тип</SortTh>
+            <SortTh k="project" sort={sort}>Проект</SortTh>
+            <SortTh k="status" sort={sort}>Статус</SortTh>
+            <SortTh k="ready" sort={sort}>Готовность</SortTh>
+            <SortTh k="mileage" sort={sort}>Пробег</SortTh>
+            <SortTh k="atp" sort={sort}>АТП</SortTh>
+          </tr></thead>
+          <tbody>{fleetRows.map(v=>(
             <tr key={v.plate}><td><span className="pri">{v.plate}</span></td><td>{v.brand}<span className="sec">{v.type}</span></td><td>{v.project}</td><td>{pill(v.status)}</td><td style={{color:v.ready?'var(--green)':'var(--cream-4)'}}>{v.ready?'исправна':'—'}</td><td><span className="id">{v.mileage.toLocaleString('ru-RU')}</span></td><td style={{color:'var(--cream-3)'}}>{v.atp}</td></tr>
           ))}</tbody>
         </table></div>
@@ -446,6 +490,8 @@ function Conversations(){
   const [rows,setRows]=useState([]);
   const [fs,setFs]=useState('all');
   const [fp,setFp]=useState('all');
+  const [q,setQ]=useState('');
+  const sort=useSort();
   useEffect(()=>{ fetch('/data/candidates.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
 
   const SC={'новый':'#4A8FA8','собеседование':'#FFB84A','оформление':'#FF6B47','принят':'#5DCB94','отказ':'#8B8377'};
@@ -457,7 +503,10 @@ function Conversations(){
   const inWork=rows.filter(c=>c.status==='собеседование'||c.status==='оформление').length;
   const projects=[...new Set(rows.map(c=>c.project))];
 
-  const filtered=rows.filter(c=>(fs==='all'||c.status===fs)&&(fp==='all'||c.project===fp));
+  const filtered=sort.apply(
+    rows.filter(c=>(fs==='all'||c.status===fs)&&(fp==='all'||c.project===fp)&&(!q||[c.name,c.project,c.position,c.source,c.phone].join(' ').toLowerCase().includes(q.toLowerCase()))),
+    {name:c=>c.name, startDay:c=>c.startDay.split('.').reverse().join(''), applied:c=>c.applied.split('.').reverse().join('')}
+  );
 
   // по дням выхода
   const dmap={}; rows.forEach(c=>{ if(c.status!=='отказ') dmap[c.startDay]=(dmap[c.startDay]||0)+1; });
@@ -508,6 +557,7 @@ function Conversations(){
         <div className="h">
           <div className="t">Кандидаты</div>
           <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: ФИО / должность / источник" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:200}}/>
             <select value={fp} onChange={e=>setFp(e.target.value)} style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12}}>
               <option value="all">Все проекты</option>
               {projects.map((p,i)=>(<option key={i} value={p}>{p}</option>))}
@@ -517,7 +567,7 @@ function Conversations(){
         </div>
         <div className="b flush">
           <table className="tbl">
-            <thead><tr><th>ФИО</th><th>Проект</th><th>Должность</th><th>Заявка</th><th>Выход</th><th>Источник</th><th>Статус</th></tr></thead>
+            <thead><tr><SortTh k="name" sort={sort}>ФИО</SortTh><SortTh k="project" sort={sort}>Проект</SortTh><SortTh k="position" sort={sort}>Должность</SortTh><SortTh k="applied" sort={sort}>Заявка</SortTh><SortTh k="startDay" sort={sort}>Выход</SortTh><SortTh k="source" sort={sort}>Источник</SortTh><SortTh k="status" sort={sort}>Статус</SortTh></tr></thead>
             <tbody>
               {filtered.map((c,i)=>(
                 <tr key={i}>
@@ -541,6 +591,8 @@ function Conversations(){
 /* ----------------- CUSTOMERS ----------------- */
 function Customers(){
   const [rows,setRows]=useState([]);
+  const [q,setQ]=useState('');
+  const sort=useSort();
   useEffect(()=>{ fetch('/data/stores.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
   const total=rows.length;
   const active=rows.filter(s=>s.status==='active').length;
@@ -548,6 +600,10 @@ function Customers(){
   const rMonth=rows.reduce((a,s)=>a+(s.routesMonth||0),0);
   const avgOT=rows.length?Math.round(rows.reduce((a,s)=>a+(s.onTime||0),0)/rows.length):0;
   const maxT=Math.max(1,...rows.map(s=>s.routesToday||0));
+  const storeRows=sort.apply(
+    rows.filter(s=>!q||[s.id,s.name,s.city,s.address,s.project].join(' ').toLowerCase().includes(q.toLowerCase())),
+    {}
+  );
   const stpill=s=>{const c=s==='active'?'#5DCB94':'#FFB84A';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26'}}>{s==='active'?'Работает':'Пауза'}</span>;};
   const download=()=>{
     const head=['ID','Магазин','Город','Адрес','Проект','Маршрутов сегодня','Маршрутов за месяц','Свои ТС','Частники','В срок %','Статус'];
@@ -575,12 +631,18 @@ function Customers(){
       </div>
 
       <div className="card">
-        <div className="h"><div className="t">Список магазинов</div><div className="m">{total} точек</div></div>
+        <div className="h">
+          <div className="t">Список магазинов</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center'}}>
+            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: магазин / город / проект" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:200}}/>
+            <span className="m">{storeRows.length} / {total}</span>
+          </div>
+        </div>
         <div className="b flush">
           <table className="tbl">
-            <thead><tr><th>ID</th><th>Магазин</th><th>Проект</th><th>Маршр. сегодня</th><th>За месяц</th><th>Свои</th><th>Частники</th><th>В срок</th><th>Статус</th></tr></thead>
+            <thead><tr><SortTh k="id" sort={sort}>ID</SortTh><SortTh k="name" sort={sort}>Магазин</SortTh><SortTh k="project" sort={sort}>Проект</SortTh><SortTh k="routesToday" sort={sort}>Маршр. сегодня</SortTh><SortTh k="routesMonth" sort={sort}>За месяц</SortTh><SortTh k="ownCars" sort={sort}>Свои</SortTh><SortTh k="hiredCars" sort={sort}>Частники</SortTh><SortTh k="onTime" sort={sort}>В срок</SortTh><SortTh k="status" sort={sort}>Статус</SortTh></tr></thead>
             <tbody>
-              {rows.map((s,i)=>(
+              {storeRows.map((s,i)=>(
                 <tr key={i}>
                   <td><span className="id">{s.id}</span></td>
                   <td><span className="pri">{s.name}</span><span className="sec">{s.address}</span></td>
@@ -610,6 +672,7 @@ function Customers(){
 function SyncPage(){
   const [rows,setRows]=useState([]);
   const [store,setStore]=useState('all');
+  const sort=useSort();
   useEffect(()=>{ fetch('/data/stats.json?t='+Date.now()).then(r=>r.json()).then(d=>setRows(d.rows||[])).catch(()=>setRows([])); },[]);
 
   const stores=[...new Set(rows.map(r=>r.store))];
@@ -680,9 +743,9 @@ function SyncPage(){
         <div className="h"><div className="t">По магазинам · итоги 30 дней</div><div className="m">{byStore.length} точек</div></div>
         <div className="b flush">
           <table className="tbl">
-            <thead><tr><th>Магазин</th><th>Проект</th><th>Закрыто</th><th>План</th><th>Выполнение</th><th>В срок</th></tr></thead>
+            <thead><tr><SortTh k="store" sort={sort}>Магазин</SortTh><SortTh k="project" sort={sort}>Проект</SortTh><SortTh k="closed" sort={sort}>Закрыто</SortTh><SortTh k="planned" sort={sort}>План</SortTh><SortTh k="compl" sort={sort}>Выполнение</SortTh><SortTh k="ot" sort={sort}>В срок</SortTh></tr></thead>
             <tbody>
-              {byStore.map((s,i)=>(
+              {(sort.sortKey?sort.apply(byStore,{}):byStore).map((s,i)=>(
                 <tr key={i} style={{cursor:'pointer'}} onClick={()=>setStore(s.store)}>
                   <td><span className="pri">{s.store}</span></td>
                   <td style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
@@ -1231,33 +1294,48 @@ function AssistantChat(){
 /* ============================================================ */
 function Reports(){
   const REP=[
-    {t:'Собственный автопарк', d:'ТС · статусы, проекты, пробег, АТП', f:'/data/own-fleet.csv', n:'ГФД_собственный_парк'},
-    {t:'Привлечённый парк', d:'частники · регистрация, маршруты, проекты', f:'/data/hired-fleet.csv', n:'ГФД_привлечённый_парк'},
-    {t:'Магазины', d:'точки · маршруты, транспорт, «в срок %»', f:'/data/stores.csv', n:'ГФД_магазины'},
-    {t:'Кадры', d:'кандидаты · проекты, даты выхода, статусы', f:'/data/candidates.csv', n:'ГФД_кадры'},
+    {key:'own', t:'Собственный автопарк', d:'ТС · статусы, проекты, пробег, АТП', f:'/data/own-fleet.csv', n:'ГФД_собственный_парк'},
+    {key:'hired', t:'Привлечённый парк', d:'частники · регистрация, маршруты, проекты', f:'/data/hired-fleet.csv', n:'ГФД_привлечённый_парк'},
+    {key:'stores', t:'Магазины', d:'точки · маршруты, транспорт, «в срок %»', f:'/data/stores.csv', n:'ГФД_магазины'},
+    {key:'candidates', t:'Кадры', d:'кандидаты · проекты, даты выхода, статусы', f:'/data/candidates.csv', n:'ГФД_кадры'},
+    {key:'stats', t:'Статистика маршрутов', d:'закрытые маршруты по магазинам · план · 30 дней', f:null, n:'ГФД_статистика_маршрутов'},
+    {key:'summary', t:'Сводный отчёт', d:'ключевые показатели автопарка на сегодня', f:null, n:'ГФД_сводный'},
   ];
-  const dl=async(f,n)=>{
-    try{ const t=await (await fetch(f+'?t='+Date.now())).text();
-      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
-      a.download=n+'_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  const [status,setStatus]=useState({});
+  const dl=async(r)=>{
+    try{
+      let text;
+      if(r.f){ text=await (await fetch(r.f+'?t='+Date.now())).text(); }
+      else if(r.key==='stats'){
+        const d=await (await fetch('/data/stats.json?t='+Date.now())).json(); const rows=d.rows||[];
+        const stores=[...new Set(rows.map(x=>x.store))];
+        const agg=stores.map(s=>{const rs=rows.filter(x=>x.store===s);const c=rs.reduce((a,x)=>a+x.closed,0),p=rs.reduce((a,x)=>a+x.planned,0);return [s,rs[0]?rs[0].project:'',c,p,p?Math.round(c/p*100):0,rs.length?Math.round(rs.reduce((a,x)=>a+x.onTime,0)/rs.length):0];});
+        text='﻿'+[['Магазин','Проект','Закрыто маршрутов','Запланировано','Выполнение %','В срок %'].join(';'),...agg.map(x=>x.join(';'))].join('\r\n');
+      } else {
+        const [own,hired,stores,routes]=await Promise.all(['/data/own-fleet.json','/data/hired-fleet.json','/data/stores.json','/data/routes.json'].map(u=>fetch(u+'?t='+Date.now()).then(x=>x.json())));
+        const ownOn=own.filter(v=>v.status==='На линии').length, hiredOn=hired.filter(h=>h.onLine).length;
+        const rt=(routes.daily||[]).length?routes.daily[routes.daily.length-1].routes:0;
+        text='﻿'+[['Показатель','Значение'].join(';'),['Маршрутов сегодня',rt].join(';'),['ТС на линии (всего)',ownOn+hiredOn].join(';'),['Свои на линии',ownOn].join(';'),['Частники на линии',hiredOn].join(';'),['Магазинов',stores.length].join(';')].join('\r\n');
+      }
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
+      a.download=r.n+'_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
     }catch(e){}
   };
-  const dlStats=async()=>{
-    try{ const d=await (await fetch('/data/stats.json?t='+Date.now())).json(); const rows=d.rows||[];
-      const stores=[...new Set(rows.map(r=>r.store))];
-      const agg=stores.map(s=>{const rs=rows.filter(r=>r.store===s);const c=rs.reduce((a,r)=>a+r.closed,0),p=rs.reduce((a,r)=>a+r.planned,0);return [s,rs[0]?rs[0].project:'',c,p,p?Math.round(c/p*100):0,rs.length?Math.round(rs.reduce((a,r)=>a+r.onTime,0)/rs.length):0];});
-      const head=['Магазин','Проект','Закрыто маршрутов','Запланировано','Выполнение %','В срок %'];
-      const lines=[head.join(';'),...agg.map(r=>r.join(';'))];
-      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));
-      a.download='ГФД_статистика_маршрутов_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
-    }catch(e){}
+  const sendTG=async(r)=>{
+    setStatus(s=>({...s,[r.key]:'…'}));
+    try{
+      const res=await fetch('/api/send-report',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({report:r.key})});
+      const out=await res.json();
+      setStatus(s=>({...s,[r.key]: out.ok ? '✓ отправлено' : ('⚠ '+(out.error||'ошибка'))}));
+    }catch(e){ setStatus(s=>({...s,[r.key]:'⚠ сеть'})); }
+    setTimeout(()=>setStatus(s=>({...s,[r.key]:undefined})),4000);
   };
   return (
     <Fragment>
       <div className="page-head">
         <div>
           <h1>Отчёты</h1>
-          <div className="sub">► выгрузки по автопарку · CSV (Excel) · отправка в Telegram — в плане</div>
+          <div className="sub">► выгрузки по автопарку · CSV (Excel) · отправка в Telegram (@gfd_otchet_bot)</div>
         </div>
       </div>
 
@@ -1265,34 +1343,26 @@ function Reports(){
         <div className="h"><div className="t">Доступные отчёты</div><div className="m">CSV · UTF-8</div></div>
         <div className="b flush">
           {REP.map((r,i)=>(
-            <div key={i} className="sync-row" style={{borderBottom:'1px solid var(--line)'}}>
+            <div key={i} className="sync-row" style={{borderBottom:i<REP.length-1?'1px solid var(--line)':'none'}}>
               <div className="ico">CSV</div>
               <div><div className="name">{r.t}</div><div className="desc">{r.d}</div></div>
               <div></div>
-              <div style={{display:'flex',gap:8}}>
-                <button className="primary" onClick={()=>dl(r.f,r.n)}>↓ Скачать</button>
-                <button disabled title="Настраивается через VPS + Xray-прокси">✈ В Telegram</button>
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                {status[r.key] && <span style={{fontSize:12,color:status[r.key][0]==='✓'?'var(--green)':status[r.key]==='…'?'var(--cream-3)':'var(--warn)'}}>{status[r.key]}</span>}
+                <button className="primary" onClick={()=>dl(r)}>↓ Скачать</button>
+                <button onClick={()=>sendTG(r)} disabled={status[r.key]==='…'}>✈ В Telegram</button>
               </div>
             </div>
           ))}
-          <div className="sync-row">
-            <div className="ico">CSV</div>
-            <div><div className="name">Статистика маршрутов</div><div className="desc">закрытые маршруты по магазинам · выполнение плана · 30 дней</div></div>
-            <div></div>
-            <div style={{display:'flex',gap:8}}>
-              <button className="primary" onClick={dlStats}>↓ Скачать</button>
-              <button disabled title="Настраивается через VPS + Xray-прокси">✈ В Telegram</button>
-            </div>
-          </div>
         </div>
       </div>
 
       <div style={{height:14}}/>
       <div className="card">
-        <div className="h"><div className="t">Отправка в Telegram</div><div className="m">в плане</div></div>
+        <div className="h"><div className="t">Отправка в Telegram</div><div className="m">@gfd_otchet_bot</div></div>
         <div className="b">
           <p style={{color:'var(--cream-2)',fontSize:13,margin:0,lineHeight:1.6}}>
-            Автоматическая рассылка отчётов руководству по расписанию будет подключена через <b style={{color:'var(--cream)'}}>@otchetRZ_bot</b> и VPS с Xray-прокси — по той же схеме, что уже работает в ОБЕ2. Сейчас отчёты доступны для ручного скачивания в CSV.
+            Кнопка «✈ В Telegram» отправляет отчёт файлом в чат руководителя через бота <b style={{color:'var(--cream)'}}>@gfd_otchet_bot</b>. Автоматическая рассылка по расписанию — следующим шагом (по схеме ОБЕ2).
           </p>
         </div>
       </div>

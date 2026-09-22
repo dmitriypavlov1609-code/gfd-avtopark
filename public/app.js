@@ -344,6 +344,64 @@ function Topbar({
   }, "⌘K")), actions);
 }
 
+/* ----------------- сортировка таблиц ----------------- */
+function useSort(initKey, initDir) {
+  const [sortKey, setSortKey] = useState(initKey || null);
+  const [dir, setDir] = useState(initDir || 'asc');
+  const onSort = k => {
+    if (sortKey === k) {
+      setDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(k);
+      setDir('asc');
+    }
+  };
+  const apply = (rows, acc) => {
+    if (!sortKey) return rows;
+    const get = acc && acc[sortKey] || (r => r[sortKey]);
+    const s = [...rows].sort((a, b) => {
+      const va = get(a),
+        vb = get(b);
+      if (typeof va === 'number' && typeof vb === 'number') return va - vb;
+      if (typeof va === 'boolean' && typeof vb === 'boolean') return (va ? 1 : 0) - (vb ? 1 : 0);
+      return String(va == null ? '' : va).localeCompare(String(vb == null ? '' : vb), 'ru', {
+        numeric: true
+      });
+    });
+    return dir === 'asc' ? s : s.reverse();
+  };
+  return {
+    sortKey,
+    dir,
+    onSort,
+    apply
+  };
+}
+function SortTh({
+  k,
+  sort,
+  children,
+  style
+}) {
+  const active = sort.sortKey === k;
+  return /*#__PURE__*/React.createElement("th", {
+    onClick: () => sort.onSort(k),
+    style: {
+      cursor: 'pointer',
+      userSelect: 'none',
+      whiteSpace: 'nowrap',
+      color: active ? 'var(--coral)' : undefined,
+      ...(style || {})
+    }
+  }, children, /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: active ? 1 : .35,
+      marginLeft: 4,
+      fontSize: 10
+    }
+  }, active ? sort.dir === 'asc' ? '▲' : '▼' : '⇅'));
+}
+
 /* ----------------- DASHBOARD ----------------- */
 function Dashboard({
   setPage
@@ -675,6 +733,7 @@ function Bookings() {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
+  const sort = useSort();
   useEffect(() => {
     fetch('/data/hired-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
   }, []);
@@ -706,10 +765,15 @@ function Bookings() {
   const onLine = rows.filter(r => r.onLine).length;
   const active = rows.filter(r => r.status === 'active').length;
   const doneRoutes = rows.reduce((s, r) => s + (r.routesDone || 0), 0);
-  const filtered = rows.filter(r => {
+  const filtered = sort.apply(rows.filter(r => {
     const okF = filter === 'all' || (filter === 'online' ? r.onLine : r.status === filter);
     const okQ = !q || (r.plate + ' ' + r.contractor + ' ' + (r.projects || []).join(' ')).toLowerCase().includes(q.toLowerCase());
     return okF && okQ;
+  }), {
+    contractor: r => r.contractor,
+    routesDone: r => r.routesDone,
+    projects: r => (r.projects || []).join(', '),
+    onLine: r => r.onLine ? 1 : 0
   });
   const download = () => {
     const head = ['Госномер', 'Контрагент', 'Телефон', 'Дата регистрации', 'Маршрутов выполнено', 'Проекты', 'Статус', 'На линии', 'Ставка'];
@@ -815,7 +879,31 @@ function Bookings() {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Госномер"), /*#__PURE__*/React.createElement("th", null, "Контрагент"), /*#__PURE__*/React.createElement("th", null, "Регистрация"), /*#__PURE__*/React.createElement("th", null, "Маршрутов"), /*#__PURE__*/React.createElement("th", null, "Проекты"), /*#__PURE__*/React.createElement("th", null, "Ставка"), /*#__PURE__*/React.createElement("th", null, "На линии"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+    k: "plate",
+    sort: sort
+  }, "Госномер"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "contractor",
+    sort: sort
+  }, "Контрагент"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "registered",
+    sort: sort
+  }, "Регистрация"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "routesDone",
+    sort: sort
+  }, "Маршрутов"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "projects",
+    sort: sort
+  }, "Проекты"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "rate",
+    sort: sort
+  }, "Ставка"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "onLine",
+    sort: sort
+  }, "На линии"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "status",
+    sort: sort
+  }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((r, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "id"
@@ -858,6 +946,8 @@ function Bookings() {
 /* ----------------- FLEET ----------------- */
 function Fleet() {
   const [rows, setRows] = useState([]);
+  const [q, setQ] = useState('');
+  const sort = useSort();
   useEffect(() => {
     fetch('/data/own-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
   }, []);
@@ -896,6 +986,10 @@ function Fleet() {
     if (v.status === 'На линии') pm[v.project].on++;
   });
   const projects = Object.entries(pm).sort((a, b) => b[1].t - a[1].t);
+  const fleetRows = sort.apply(rows.filter(v => !q || [v.plate, v.brand, v.type, v.kind, v.project, v.status, v.atp].join(' ').toLowerCase().includes(q.toLowerCase())), {
+    brand: v => v.brand + ' ' + v.type,
+    ready: v => v.ready ? 1 : 0
+  });
   const download = () => {
     const head = ['Госномер', 'Марка', 'Тип', 'Класс', 'Проект', 'Статус', 'Готовность', 'Пробег', 'АТП'];
     const lines = [head.join(';'), ...rows.map(v => [v.plate, v.brand, v.type, v.kind, v.project, v.status, v.ready ? 'исправна' : '—', v.mileage, v.atp].join(';'))];
@@ -1062,12 +1156,53 @@ function Fleet() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
   }, "Список ТС"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "поиск: номер / марка / проект / АТП",
+    style: {
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      color: 'var(--cream)',
+      padding: '6px 10px',
+      fontSize: 12,
+      minWidth: 220
+    }
+  }), /*#__PURE__*/React.createElement("span", {
     className: "m"
-  }, total, " машин · тест-данные (Google-таблица)")), /*#__PURE__*/React.createElement("div", {
+  }, fleetRows.length, " / ", total))), /*#__PURE__*/React.createElement("div", {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Госномер"), /*#__PURE__*/React.createElement("th", null, "Марка / тип"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Статус"), /*#__PURE__*/React.createElement("th", null, "Готовность"), /*#__PURE__*/React.createElement("th", null, "Пробег"), /*#__PURE__*/React.createElement("th", null, "АТП"))), /*#__PURE__*/React.createElement("tbody", null, rows.map(v => /*#__PURE__*/React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+    k: "plate",
+    sort: sort
+  }, "Госномер"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "brand",
+    sort: sort
+  }, "Марка / тип"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "project",
+    sort: sort
+  }, "Проект"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "status",
+    sort: sort
+  }, "Статус"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "ready",
+    sort: sort
+  }, "Готовность"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "mileage",
+    sort: sort
+  }, "Пробег"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "atp",
+    sort: sort
+  }, "АТП"))), /*#__PURE__*/React.createElement("tbody", null, fleetRows.map(v => /*#__PURE__*/React.createElement("tr", {
     key: v.plate
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "pri"
@@ -1091,6 +1226,8 @@ function Conversations() {
   const [rows, setRows] = useState([]);
   const [fs, setFs] = useState('all');
   const [fp, setFp] = useState('all');
+  const [q, setQ] = useState('');
+  const sort = useSort();
   useEffect(() => {
     fetch('/data/candidates.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
   }, []);
@@ -1120,7 +1257,11 @@ function Conversations() {
   const hired = rows.filter(c => c.status === 'принят').length;
   const inWork = rows.filter(c => c.status === 'собеседование' || c.status === 'оформление').length;
   const projects = [...new Set(rows.map(c => c.project))];
-  const filtered = rows.filter(c => (fs === 'all' || c.status === fs) && (fp === 'all' || c.project === fp));
+  const filtered = sort.apply(rows.filter(c => (fs === 'all' || c.status === fs) && (fp === 'all' || c.project === fp) && (!q || [c.name, c.project, c.position, c.source, c.phone].join(' ').toLowerCase().includes(q.toLowerCase()))), {
+    name: c => c.name,
+    startDay: c => c.startDay.split('.').reverse().join(''),
+    applied: c => c.applied.split('.').reverse().join('')
+  });
 
   // по дням выхода
   const dmap = {};
@@ -1265,7 +1406,20 @@ function Conversations() {
       alignItems: 'center',
       flexWrap: 'wrap'
     }
-  }, /*#__PURE__*/React.createElement("select", {
+  }, /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "поиск: ФИО / должность / источник",
+    style: {
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      color: 'var(--cream)',
+      padding: '6px 10px',
+      fontSize: 12,
+      minWidth: 200
+    }
+  }), /*#__PURE__*/React.createElement("select", {
     value: fp,
     onChange: e => setFp(e.target.value),
     style: {
@@ -1285,7 +1439,28 @@ function Conversations() {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "ФИО"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Должность"), /*#__PURE__*/React.createElement("th", null, "Заявка"), /*#__PURE__*/React.createElement("th", null, "Выход"), /*#__PURE__*/React.createElement("th", null, "Источник"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((c, i) => /*#__PURE__*/React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+    k: "name",
+    sort: sort
+  }, "ФИО"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "project",
+    sort: sort
+  }, "Проект"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "position",
+    sort: sort
+  }, "Должность"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "applied",
+    sort: sort
+  }, "Заявка"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "startDay",
+    sort: sort
+  }, "Выход"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "source",
+    sort: sort
+  }, "Источник"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "status",
+    sort: sort
+  }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((c, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "pri"
@@ -1324,6 +1499,8 @@ function Conversations() {
 /* ----------------- CUSTOMERS ----------------- */
 function Customers() {
   const [rows, setRows] = useState([]);
+  const [q, setQ] = useState('');
+  const sort = useSort();
   useEffect(() => {
     fetch('/data/stores.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
   }, []);
@@ -1333,6 +1510,7 @@ function Customers() {
   const rMonth = rows.reduce((a, s) => a + (s.routesMonth || 0), 0);
   const avgOT = rows.length ? Math.round(rows.reduce((a, s) => a + (s.onTime || 0), 0) / rows.length) : 0;
   const maxT = Math.max(1, ...rows.map(s => s.routesToday || 0));
+  const storeRows = sort.apply(rows.filter(s => !q || [s.id, s.name, s.city, s.address, s.project].join(' ').toLowerCase().includes(q.toLowerCase())), {});
   const stpill = s => {
     const c = s === 'active' ? '#5DCB94' : '#FFB84A';
     return /*#__PURE__*/React.createElement("span", {
@@ -1417,12 +1595,59 @@ function Customers() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
   }, "Список магазинов"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "поиск: магазин / город / проект",
+    style: {
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      color: 'var(--cream)',
+      padding: '6px 10px',
+      fontSize: 12,
+      minWidth: 200
+    }
+  }), /*#__PURE__*/React.createElement("span", {
     className: "m"
-  }, total, " точек")), /*#__PURE__*/React.createElement("div", {
+  }, storeRows.length, " / ", total))), /*#__PURE__*/React.createElement("div", {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "ID"), /*#__PURE__*/React.createElement("th", null, "Магазин"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Маршр. сегодня"), /*#__PURE__*/React.createElement("th", null, "За месяц"), /*#__PURE__*/React.createElement("th", null, "Свои"), /*#__PURE__*/React.createElement("th", null, "Частники"), /*#__PURE__*/React.createElement("th", null, "В срок"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, rows.map((s, i) => /*#__PURE__*/React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+    k: "id",
+    sort: sort
+  }, "ID"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "name",
+    sort: sort
+  }, "Магазин"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "project",
+    sort: sort
+  }, "Проект"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "routesToday",
+    sort: sort
+  }, "Маршр. сегодня"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "routesMonth",
+    sort: sort
+  }, "За месяц"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "ownCars",
+    sort: sort
+  }, "Свои"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "hiredCars",
+    sort: sort
+  }, "Частники"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "onTime",
+    sort: sort
+  }, "В срок"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "status",
+    sort: sort
+  }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, storeRows.map((s, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "id"
@@ -1477,6 +1702,7 @@ function Customers() {
 function SyncPage() {
   const [rows, setRows] = useState([]);
   const [store, setStore] = useState('all');
+  const sort = useSort();
   useEffect(() => {
     fetch('/data/stats.json?t=' + Date.now()).then(r => r.json()).then(d => setRows(d.rows || [])).catch(() => setRows([]));
   }, []);
@@ -1668,7 +1894,25 @@ function SyncPage() {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Магазин"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Закрыто"), /*#__PURE__*/React.createElement("th", null, "План"), /*#__PURE__*/React.createElement("th", null, "Выполнение"), /*#__PURE__*/React.createElement("th", null, "В срок"))), /*#__PURE__*/React.createElement("tbody", null, byStore.map((s, i) => /*#__PURE__*/React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
+    k: "store",
+    sort: sort
+  }, "Магазин"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "project",
+    sort: sort
+  }, "Проект"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "closed",
+    sort: sort
+  }, "Закрыто"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "planned",
+    sort: sort
+  }, "План"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "compl",
+    sort: sort
+  }, "Выполнение"), /*#__PURE__*/React.createElement(SortTh, {
+    k: "ot",
+    sort: sort
+  }, "В срок"))), /*#__PURE__*/React.createElement("tbody", null, (sort.sortKey ? sort.apply(byStore, {}) : byStore).map((s, i) => /*#__PURE__*/React.createElement("tr", {
     key: i,
     style: {
       cursor: 'pointer'
@@ -2698,67 +2942,112 @@ function AssistantChat() {
 /* ============================================================ */
 function Reports() {
   const REP = [{
+    key: 'own',
     t: 'Собственный автопарк',
     d: 'ТС · статусы, проекты, пробег, АТП',
     f: '/data/own-fleet.csv',
     n: 'ГФД_собственный_парк'
   }, {
+    key: 'hired',
     t: 'Привлечённый парк',
     d: 'частники · регистрация, маршруты, проекты',
     f: '/data/hired-fleet.csv',
     n: 'ГФД_привлечённый_парк'
   }, {
+    key: 'stores',
     t: 'Магазины',
     d: 'точки · маршруты, транспорт, «в срок %»',
     f: '/data/stores.csv',
     n: 'ГФД_магазины'
   }, {
+    key: 'candidates',
     t: 'Кадры',
     d: 'кандидаты · проекты, даты выхода, статусы',
     f: '/data/candidates.csv',
     n: 'ГФД_кадры'
+  }, {
+    key: 'stats',
+    t: 'Статистика маршрутов',
+    d: 'закрытые маршруты по магазинам · план · 30 дней',
+    f: null,
+    n: 'ГФД_статистика_маршрутов'
+  }, {
+    key: 'summary',
+    t: 'Сводный отчёт',
+    d: 'ключевые показатели автопарка на сегодня',
+    f: null,
+    n: 'ГФД_сводный'
   }];
-  const dl = async (f, n) => {
+  const [status, setStatus] = useState({});
+  const dl = async r => {
     try {
-      const t = await (await fetch(f + '?t=' + Date.now())).text();
+      let text;
+      if (r.f) {
+        text = await (await fetch(r.f + '?t=' + Date.now())).text();
+      } else if (r.key === 'stats') {
+        const d = await (await fetch('/data/stats.json?t=' + Date.now())).json();
+        const rows = d.rows || [];
+        const stores = [...new Set(rows.map(x => x.store))];
+        const agg = stores.map(s => {
+          const rs = rows.filter(x => x.store === s);
+          const c = rs.reduce((a, x) => a + x.closed, 0),
+            p = rs.reduce((a, x) => a + x.planned, 0);
+          return [s, rs[0] ? rs[0].project : '', c, p, p ? Math.round(c / p * 100) : 0, rs.length ? Math.round(rs.reduce((a, x) => a + x.onTime, 0) / rs.length) : 0];
+        });
+        text = '﻿' + [['Магазин', 'Проект', 'Закрыто маршрутов', 'Запланировано', 'Выполнение %', 'В срок %'].join(';'), ...agg.map(x => x.join(';'))].join('\r\n');
+      } else {
+        const [own, hired, stores, routes] = await Promise.all(['/data/own-fleet.json', '/data/hired-fleet.json', '/data/stores.json', '/data/routes.json'].map(u => fetch(u + '?t=' + Date.now()).then(x => x.json())));
+        const ownOn = own.filter(v => v.status === 'На линии').length,
+          hiredOn = hired.filter(h => h.onLine).length;
+        const rt = (routes.daily || []).length ? routes.daily[routes.daily.length - 1].routes : 0;
+        text = '﻿' + [['Показатель', 'Значение'].join(';'), ['Маршрутов сегодня', rt].join(';'), ['ТС на линии (всего)', ownOn + hiredOn].join(';'), ['Свои на линии', ownOn].join(';'), ['Частники на линии', hiredOn].join(';'), ['Магазинов', stores.length].join(';')].join('\r\n');
+      }
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([t], {
+      a.href = URL.createObjectURL(new Blob([text], {
         type: 'text/csv;charset=utf-8'
       }));
-      a.download = n + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.download = r.n + '_' + new Date().toISOString().slice(0, 10) + '.csv';
       document.body.appendChild(a);
       a.click();
       a.remove();
     } catch (e) {}
   };
-  const dlStats = async () => {
+  const sendTG = async r => {
+    setStatus(s => ({
+      ...s,
+      [r.key]: '…'
+    }));
     try {
-      const d = await (await fetch('/data/stats.json?t=' + Date.now())).json();
-      const rows = d.rows || [];
-      const stores = [...new Set(rows.map(r => r.store))];
-      const agg = stores.map(s => {
-        const rs = rows.filter(r => r.store === s);
-        const c = rs.reduce((a, r) => a + r.closed, 0),
-          p = rs.reduce((a, r) => a + r.planned, 0);
-        return [s, rs[0] ? rs[0].project : '', c, p, p ? Math.round(c / p * 100) : 0, rs.length ? Math.round(rs.reduce((a, r) => a + r.onTime, 0) / rs.length) : 0];
+      const res = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          report: r.key
+        })
       });
-      const head = ['Магазин', 'Проект', 'Закрыто маршрутов', 'Запланировано', 'Выполнение %', 'В срок %'];
-      const lines = [head.join(';'), ...agg.map(r => r.join(';'))];
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], {
-        type: 'text/csv;charset=utf-8'
+      const out = await res.json();
+      setStatus(s => ({
+        ...s,
+        [r.key]: out.ok ? '✓ отправлено' : '⚠ ' + (out.error || 'ошибка')
       }));
-      a.download = 'ГФД_статистика_маршрутов_' + new Date().toISOString().slice(0, 10) + '.csv';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch (e) {}
+    } catch (e) {
+      setStatus(s => ({
+        ...s,
+        [r.key]: '⚠ сеть'
+      }));
+    }
+    setTimeout(() => setStatus(s => ({
+      ...s,
+      [r.key]: undefined
+    })), 4000);
   };
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Отчёты"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► выгрузки по автопарку · CSV (Excel) · отправка в Telegram — в плане"))), /*#__PURE__*/React.createElement("div", {
+  }, "► выгрузки по автопарку · CSV (Excel) · отправка в Telegram (@gfd_otchet_bot)"))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
@@ -2772,7 +3061,7 @@ function Reports() {
     key: i,
     className: "sync-row",
     style: {
-      borderBottom: '1px solid var(--line)'
+      borderBottom: i < REP.length - 1 ? '1px solid var(--line)' : 'none'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "ico"
@@ -2783,34 +3072,21 @@ function Reports() {
   }, r.d)), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
-      gap: 8
+      gap: 8,
+      alignItems: 'center'
     }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => dl(r.f, r.n)
-  }, "↓ Скачать"), /*#__PURE__*/React.createElement("button", {
-    disabled: true,
-    title: "Настраивается через VPS + Xray-прокси"
-  }, "✈ В Telegram")))), /*#__PURE__*/React.createElement("div", {
-    className: "sync-row"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ico"
-  }, "CSV"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "name"
-  }, "Статистика маршрутов"), /*#__PURE__*/React.createElement("div", {
-    className: "desc"
-  }, "закрытые маршруты по магазинам · выполнение плана · 30 дней")), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
+  }, status[r.key] && /*#__PURE__*/React.createElement("span", {
     style: {
-      display: 'flex',
-      gap: 8
+      fontSize: 12,
+      color: status[r.key][0] === '✓' ? 'var(--green)' : status[r.key] === '…' ? 'var(--cream-3)' : 'var(--warn)'
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, status[r.key]), /*#__PURE__*/React.createElement("button", {
     className: "primary",
-    onClick: dlStats
+    onClick: () => dl(r)
   }, "↓ Скачать"), /*#__PURE__*/React.createElement("button", {
-    disabled: true,
-    title: "Настраивается через VPS + Xray-прокси"
-  }, "✈ В Telegram"))))), /*#__PURE__*/React.createElement("div", {
+    onClick: () => sendTG(r),
+    disabled: status[r.key] === '…'
+  }, "✈ В Telegram")))))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 14
     }
@@ -2822,7 +3098,7 @@ function Reports() {
     className: "t"
   }, "Отправка в Telegram"), /*#__PURE__*/React.createElement("div", {
     className: "m"
-  }, "в плане")), /*#__PURE__*/React.createElement("div", {
+  }, "@gfd_otchet_bot")), /*#__PURE__*/React.createElement("div", {
     className: "b"
   }, /*#__PURE__*/React.createElement("p", {
     style: {
@@ -2831,11 +3107,11 @@ function Reports() {
       margin: 0,
       lineHeight: 1.6
     }
-  }, "Автоматическая рассылка отчётов руководству по расписанию будет подключена через ", /*#__PURE__*/React.createElement("b", {
+  }, "Кнопка «✈ В Telegram» отправляет отчёт файлом в чат руководителя через бота ", /*#__PURE__*/React.createElement("b", {
     style: {
       color: 'var(--cream)'
     }
-  }, "@otchetRZ_bot"), " и VPS с Xray-прокси — по той же схеме, что уже работает в ОБЕ2. Сейчас отчёты доступны для ручного скачивания в CSV."))));
+  }, "@gfd_otchet_bot"), ". Автоматическая рассылка по расписанию — следующим шагом (по схеме ОБЕ2)."))));
 }
 function App() {
   const [page, setPage] = useState('dash');
