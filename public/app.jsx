@@ -541,187 +541,93 @@ function Fleet(){
   );
 }
 
-/* ----------------- CONVERSATIONS ----------------- */
+/* ----------------- КАДРЫ (кандидаты) ----------------- */
 function Conversations(){
-  const [activeId, setActiveId] = useState('CV-1');
-  const [msgs, setMsgs] = useState(() => ({ ...CONVO_MESSAGES }));
-  const [draft, setDraft] = useState('');
-  const [busy, setBusy] = useState(false);
-  const bodyRef = useRef(null);
+  const [rows,setRows]=useState([]);
+  const [fs,setFs]=useState('all');
+  const [fp,setFp]=useState('all');
+  useEffect(()=>{ fetch('/data/candidates.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
 
-  const conv = CONVOS.find(c => c.id === activeId);
-  const currentMsgs = msgs[activeId] || [];
+  const SC={'новый':'#4A8FA8','собеседование':'#FFB84A','оформление':'#FF6B47','принят':'#5DCB94','отказ':'#8B8377'};
+  const pill=s=>{const c=SC[s]||'#8B8377';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26',whiteSpace:'nowrap'}}>{s}</span>;};
 
-  useEffect(() => {
-    if(bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [currentMsgs.length, activeId]);
+  const total=rows.length;
+  const lemana=rows.filter(c=>c.project==='Лемана Про').length;
+  const hired=rows.filter(c=>c.status==='принят').length;
+  const inWork=rows.filter(c=>c.status==='собеседование'||c.status==='оформление').length;
+  const projects=[...new Set(rows.map(c=>c.project))];
 
-  async function send(text){
-    if(!text.trim()) return;
-    const newUser = {who:'user', text};
-    const updated = [...currentMsgs, newUser];
-    setMsgs(m => ({...m, [activeId]: updated}));
-    setDraft('');
-    setBusy(true);
+  const filtered=rows.filter(c=>(fs==='all'||c.status===fs)&&(fp==='all'||c.project===fp));
 
-    // typing
-    setMsgs(m => ({...m, [activeId]: [...updated, {who:'typing'}]}));
-    await new Promise(r=>setTimeout(r, 280));
+  // по дням выхода
+  const dmap={}; rows.forEach(c=>{ if(c.status!=='отказ') dmap[c.startDay]=(dmap[c.startDay]||0)+1; });
+  const byDay=Object.entries(dmap).sort((a,b)=>{const p=s=>s.split('.').reverse().join('');return p(a[0])<p(b[0])?-1:1;}).slice(0,8);
+  const maxDay=Math.max(1,...byDay.map(d=>d[1]));
 
-    const isLive = (localStorage.getItem(KEY_STORAGE)||'').startsWith('sk-ant-');
-    const messages = updated.map(m => ({role: m.who==='user'?'user':'assistant', content: m.text || ''})).filter(m => m.content);
-
-    let acc = '';
-    const fallback = pickFakeReply(text, conv?.lang || 'ru');
-    try{
-      const gen = isLive
-        ? claudeStream({system:SYSTEM, messages})
-        : fakeStream(fallback, 11);
-      let first = true;
-      for await (const chunk of gen){
-        acc += chunk;
-        setMsgs(m => {
-          const list = [...updated];
-          list.push({who:'bot', meta: 'AI помощник · ' + (conv?.lang || 'ru'), text: acc});
-          return {...m, [activeId]: list};
-        });
-      }
-    }catch(err){
-      acc = fallback;
-      setMsgs(m => {
-        const list = [...updated];
-        list.push({who:'bot', meta:'demo · scripted', text: acc});
-        return {...m, [activeId]: list};
-      });
-    }
-    setBusy(false);
-  }
-
-  function pickFakeReply(text, lang){
-    const t = text.toLowerCase();
-    if(lang === 'sr'){
-      return 'Razumem. Pripremam ponudu sa tačnim datumima — pokazujem 3 opcije za narednih 14 dana. Šaljem na WhatsApp za 2 minuta. Cashback od 10% se obračunava automatski.';
-    }
-    if(lang === 'en'){
-      return 'Got it. I will prepare the booking confirmation in the next minute. Pickup at BEG airport at 14:30 — Z4 with full insurance. Your 10% cashback (≈€26) will apply to your next ride.';
-    }
-    if(t.includes('кресл')){
-      return 'Да, детское кресло Group 1 (9-18 кг) — бесплатно в этом сезоне. Доставим вместе с машиной. У вас один ребёнок или нужно два кресла?';
-    }
-    if(t.includes('шлем')){
-      return 'L шлем — есть. Также куртка размер 50, перчатки L. Всё в комплекте по €0 — это в стоимости. Доставка к отелю в 12:00 или утром 11 числа?';
-    }
-    return 'Понял! Готовлю подтверждение, отправлю на WhatsApp в течение пары минут. Cashback 10% (€26) пойдёт на следующую поездку — он начисляется автоматически после возврата.';
-  }
+  const download=()=>{
+    const head=['ФИО','Телефон','Проект','Должность','Дата заявки','Дата выхода','Статус','Источник'];
+    const lines=[head.join(';'),...rows.map(c=>[c.name,c.phone,c.project,c.position,c.applied,c.startDay,c.status,c.source].join(';'))];
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ГФД_кадры_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  };
+  const FB=(id,txt)=>(<button onClick={()=>setFs(id)} style={{borderColor:fs===id?'var(--coral)':'var(--line-2)',color:fs===id?'var(--coral)':'var(--cream-2)'}}>{txt}</button>);
 
   return (
     <Fragment>
       <div className="page-head">
         <div>
-          <h1>Переписки</h1>
-          <div className="sub">► AI-помощник + операторы · 3 канала</div>
+          <h1>Кадры</h1>
+          <div className="sub">► кандидаты на проекты · выход по дням</div>
         </div>
         <div className="actions">
-          <button>фильтр</button>
-          <button>экспорт</button>
+          <button className="primary" onClick={download}>↓ Скачать отчёт</button>
         </div>
       </div>
 
-      <div className="convo-host">
-        <div className="convo-list">
-          <div className="convo-list-h">
-            <h3>Активные · {CONVOS.length}</h3>
-            <div className="filter">все каналы ↓</div>
-          </div>
-          <div className="convo-list-body">
-            {CONVOS.map(c => (
-              <div key={c.id} className={'convo ' + (c.id === activeId ? 'active' : '')} onClick={()=>setActiveId(c.id)}>
-                <div className="top">
-                  <span className="name">{c.name}</span>
-                  <span className="time">{c.time}</span>
-                </div>
-                <div className="preview">{c.last}</div>
-                <div className="meta">
-                  <span className="chan">{c.ch}</span>
-                  <span className="lang-flag">{c.lang}</span>
-                  {c.status === 'ai' && <span className="pill avail" style={{padding:'1px 6px',fontSize:9}}>AI</span>}
-                  {c.status === 'human' && <span className="pill pending" style={{padding:'1px 6px',fontSize:9}}>human</span>}
-                </div>
-                {c.unread > 0 && <span className="unread">{c.unread}</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="convo-detail">
-          {conv ? (
-            <Fragment>
-              <div className="convo-detail-h">
-                <div className="avatar">{(conv.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('')}</div>
-                <div>
-                  <div className="name">{conv.name}</div>
-                  <div className="meta">{conv.ch} · {conv.lang} · {conv.id}</div>
-                </div>
-                <div className="actions">
-                  <button>передать оператору</button>
-                  <button>создать бронь</button>
-                </div>
-              </div>
-              <div className="convo-body" ref={bodyRef}>
-                {currentMsgs.map((m, i) => m.who === 'typing' ? (
-                  <div key={i} className="typing"><span/><span/><span/></div>
-                ) : (
-                  <div key={i} className={'msg ' + (m.who === 'user' ? 'user' : 'bot')}>
-                    {m.meta && <div className="meta">{m.meta}</div>}
-                    {m.text}
-                  </div>
-                ))}
-              </div>
-              <form className="convo-input" onSubmit={e => {e.preventDefault(); send(draft);}}>
-                <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Напишите ответ (AI или оператор)…" disabled={busy} />
-                <button type="submit" disabled={busy || !draft.trim()}>{busy ? '…' : 'отправить'}</button>
-              </form>
-            </Fragment>
-          ) : (
-            <div className="convo-empty"><b>Выберите переписку</b>Слева список активных диалогов с AI-помощником и операторами.</div>
-          )}
-        </div>
+      <div className="stats">
+        <div className="stat"><div className="l">► всего кандидатов</div><div className="v">{total}</div><div className="d"><span className="lab">в воронке</span></div></div>
+        <div className="stat"><div className="l">► на Лемана Про</div><div className="v">{lemana}</div><div className="d"><span className="delta up">{total?Math.round(lemana/total*100):0}%</span><span className="lab">от всех</span></div></div>
+        <div className="stat"><div className="l">► принято</div><div className="v">{hired}</div><div className="d"><span className="lab">оформлены</span></div></div>
+        <div className="stat"><div className="l">► в работе</div><div className="v">{inWork}</div><div className="d"><span className="lab">собеседование / оформление</span></div></div>
       </div>
-    </Fragment>
-  );
-}
 
-/* ----------------- CUSTOMERS ----------------- */
-function Customers(){
-  return (
-    <Fragment>
-      <div className="page-head">
-        <div>
-          <h1>Клиенты</h1>
-          <div className="sub">► {CUSTOMERS.length} в выборке · всего 2 184</div>
-        </div>
-        <div className="actions">
-          <button>фильтр</button>
-          <button>экспорт CSV</button>
-          <button className="primary">+ клиент</button>
+      <div className="card">
+        <div className="h"><div className="t">Выход кандидатов по дням</div><div className="m">ближайшие даты</div></div>
+        <div className="b">
+          {byDay.map((d,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'7px 0',borderBottom:i<byDay.length-1?'1px dashed var(--line)':'none'}}>
+              <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:'var(--cream-2)',minWidth:80}}>{d[0]}</span>
+              <div style={{flex:1,height:8,borderRadius:5,background:'var(--line)',overflow:'hidden'}}><div style={{height:'100%',width:(d[1]/maxDay*100)+'%',background:'var(--coral)'}}></div></div>
+              <b style={{color:'var(--cream)',minWidth:22,textAlign:'right'}}>{d[1]}</b>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="card">
+        <div className="h">
+          <div className="t">Кандидаты</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            <select value={fp} onChange={e=>setFp(e.target.value)} style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12}}>
+              <option value="all">Все проекты</option>
+              {projects.map((p,i)=>(<option key={i} value={p}>{p}</option>))}
+            </select>
+            {FB('all','все')}{FB('новый','новые')}{FB('собеседование','собес.')}{FB('оформление','оформл.')}{FB('принят','приняты')}
+          </div>
+        </div>
         <div className="b flush">
           <table className="tbl">
-            <thead><tr><th>ID</th><th>Имя</th><th>Контакт</th><th>Язык</th><th>С нами с</th><th>Поездок</th><th>Сумма</th><th>Cashback</th></tr></thead>
+            <thead><tr><th>ФИО</th><th>Проект</th><th>Должность</th><th>Заявка</th><th>Выход</th><th>Источник</th><th>Статус</th></tr></thead>
             <tbody>
-              {CUSTOMERS.map(c => (
-                <tr key={c.id}>
-                  <td><span className="id">{c.id}</span></td>
-                  <td><span className="pri">{c.name}</span></td>
-                  <td><span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:'var(--cream-2)'}}>{c.phone}</span></td>
-                  <td><span className="lang-flag">{c.lang}</span></td>
-                  <td><span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:'var(--cream-3)'}}>{c.since}</span></td>
-                  <td>{c.trips}</td>
-                  <td><b style={{color:'var(--cream)'}}>€{c.spent.toLocaleString('en-US').replace(',',' ')}</b></td>
-                  <td><span className="cashback">€{c.cashback}</span></td>
+              {filtered.map((c,i)=>(
+                <tr key={i}>
+                  <td><span className="pri">{c.name}</span><span className="sec">{c.phone}</span></td>
+                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{c.project}</td>
+                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{c.position}</td>
+                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,color:'var(--cream-3)'}}>{c.applied}</td>
+                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,color:'var(--cream)'}}>{c.startDay}</td>
+                  <td style={{fontSize:12,color:'var(--cream-3)'}}>{c.source}</td>
+                  <td>{pill(c.status)}</td>
                 </tr>
               ))}
             </tbody>
@@ -732,42 +638,167 @@ function Customers(){
   );
 }
 
-/* ----------------- SYNC ----------------- */
-function SyncPage(){
-  const [refreshing, setRefreshing] = useState(null);
-  function doSync(name){
-    setRefreshing(name);
-    setTimeout(() => setRefreshing(null), 1300);
-  }
+/* ----------------- CUSTOMERS ----------------- */
+function Customers(){
+  const [rows,setRows]=useState([]);
+  useEffect(()=>{ fetch('/data/stores.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
+  const total=rows.length;
+  const active=rows.filter(s=>s.status==='active').length;
+  const rToday=rows.reduce((a,s)=>a+(s.routesToday||0),0);
+  const rMonth=rows.reduce((a,s)=>a+(s.routesMonth||0),0);
+  const avgOT=rows.length?Math.round(rows.reduce((a,s)=>a+(s.onTime||0),0)/rows.length):0;
+  const maxT=Math.max(1,...rows.map(s=>s.routesToday||0));
+  const stpill=s=>{const c=s==='active'?'#5DCB94':'#FFB84A';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26'}}>{s==='active'?'Работает':'Пауза'}</span>;};
+  const download=()=>{
+    const head=['ID','Магазин','Город','Адрес','Проект','Маршрутов сегодня','Маршрутов за месяц','Свои ТС','Частники','В срок %','Статус'];
+    const lines=[head.join(';'),...rows.map(s=>[s.id,s.name,s.city,s.address,s.project,s.routesToday,s.routesMonth,s.ownCars,s.hiredCars,s.onTime,s.status==='active'?'работает':'пауза'].join(';'))];
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ГФД_магазины_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  };
   return (
     <Fragment>
       <div className="page-head">
         <div>
-          <h1>Источники данных</h1>
-          <div className="sub">► auto-sync каждые 5 минут · последние операции</div>
+          <h1>Магазины</h1>
+          <div className="sub">► точки обслуживания · маршруты и закреплённый транспорт</div>
         </div>
         <div className="actions">
-          <button className="primary">синхронизировать всё</button>
+          <button className="primary" onClick={download}>↓ Скачать отчёт</button>
+        </div>
+      </div>
+
+      <div className="stats">
+        <div className="stat"><div className="l">► всего магазинов</div><div className="v">{total}</div><div className="d"><span className="lab">точек</span></div></div>
+        <div className="stat"><div className="l">► работают</div><div className="v">{active}</div><div className="d"><span className="lab">активных сегодня</span></div></div>
+        <div className="stat"><div className="l">► маршрутов сегодня</div><div className="v">{rToday}</div><div className="d"><span className="lab">по всем точкам</span></div></div>
+        <div className="stat"><div className="l">► в срок · среднее</div><div className="v">{avgOT}%</div><div className="d"><span className="delta up">за месяц {rMonth.toLocaleString('ru-RU')}</span></div></div>
+      </div>
+
+      <div className="card">
+        <div className="h"><div className="t">Список магазинов</div><div className="m">{total} точек</div></div>
+        <div className="b flush">
+          <table className="tbl">
+            <thead><tr><th>ID</th><th>Магазин</th><th>Проект</th><th>Маршр. сегодня</th><th>За месяц</th><th>Свои</th><th>Частники</th><th>В срок</th><th>Статус</th></tr></thead>
+            <tbody>
+              {rows.map((s,i)=>(
+                <tr key={i}>
+                  <td><span className="id">{s.id}</span></td>
+                  <td><span className="pri">{s.name}</span><span className="sec">{s.address}</span></td>
+                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <b style={{color:'var(--cream)'}}>{s.routesToday}</b>
+                      <div style={{flex:1,height:5,minWidth:40,borderRadius:4,background:'var(--line)',overflow:'hidden'}}><div style={{height:'100%',width:(s.routesToday/maxT*100)+'%',background:'var(--coral)'}}></div></div>
+                    </div>
+                  </td>
+                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12}}>{s.routesMonth}</td>
+                  <td>{s.ownCars}</td>
+                  <td>{s.hiredCars}</td>
+                  <td><span style={{color:s.onTime>=95?'var(--green)':'var(--warn)',fontWeight:600}}>{s.onTime}%</span></td>
+                  <td>{stpill(s.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Fragment>
+  );
+}
+
+/* ----------------- СТАТИСТИКА (закрытые маршруты) ----------------- */
+function SyncPage(){
+  const [rows,setRows]=useState([]);
+  const [store,setStore]=useState('all');
+  useEffect(()=>{ fetch('/data/stats.json?t='+Date.now()).then(r=>r.json()).then(d=>setRows(d.rows||[])).catch(()=>setRows([])); },[]);
+
+  const stores=[...new Set(rows.map(r=>r.store))];
+  const scoped=store==='all'?rows:rows.filter(r=>r.store===store);
+  const closed=scoped.reduce((a,r)=>a+r.closed,0);
+  const planned=scoped.reduce((a,r)=>a+r.planned,0);
+  const compl=planned?Math.round(closed/planned*100):0;
+  const avgOT=scoped.length?Math.round(scoped.reduce((a,r)=>a+r.onTime,0)/scoped.length):0;
+
+  const byStore=stores.map(s=>{
+    const rs=rows.filter(r=>r.store===s);
+    const c=rs.reduce((a,r)=>a+r.closed,0), p=rs.reduce((a,r)=>a+r.planned,0);
+    return {store:s,project:rs[0]?rs[0].project:'',closed:c,planned:p,compl:p?Math.round(c/p*100):0,ot:rs.length?Math.round(rs.reduce((a,r)=>a+r.onTime,0)/rs.length):0};
+  }).sort((a,b)=>b.closed-a.closed);
+
+  const dmap={}; scoped.forEach(r=>{dmap[r.date]=(dmap[r.date]||0)+r.closed;});
+  const series=Object.entries(dmap).sort().map(([d,v])=>({label:d.slice(8,10)+'.'+d.slice(5,7),v}));
+  const W=680,H=190,P=10,n=series.length;
+  const max=Math.max(1,...series.map(s=>s.v)),min=Math.min(0,...series.map(s=>s.v));
+  const xp=i=>n>1?P+i*(W-2*P)/(n-1):W/2, yp=v=>(H-P)-(v-min)/((max-min)||1)*(H-2*P);
+  const line=series.map((s,i)=>(i?'L':'M')+xp(i).toFixed(1)+' '+yp(s.v).toFixed(1)).join(' ');
+  const area=n?line+` L ${xp(n-1).toFixed(1)} ${H-P} L ${xp(0).toFixed(1)} ${H-P} Z`:'';
+
+  const download=()=>{
+    const head=['Магазин','Проект','Закрыто маршрутов','Запланировано','Выполнение %','В срок %'];
+    const lines=[head.join(';'),...byStore.map(s=>[s.store,s.project,s.closed,s.planned,s.compl,s.ot].join(';'))];
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ГФД_статистика_маршрутов_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  };
+
+  return (
+    <Fragment>
+      <div className="page-head">
+        <div>
+          <h1>Статистика</h1>
+          <div className="sub">► закрытые маршруты по магазинам · последние 30 дней</div>
+        </div>
+        <div className="actions" style={{display:'flex',gap:8,alignItems:'center'}}>
+          <select value={store} onChange={e=>setStore(e.target.value)} style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12}}>
+            <option value="all">Все магазины</option>
+            {stores.map((s,i)=>(<option key={i} value={s}>{s}</option>))}
+          </select>
+          <button className="primary" onClick={download}>↓ Скачать отчёт</button>
+        </div>
+      </div>
+
+      <div className="stats">
+        <div className="stat"><div className="l">► закрыто маршрутов</div><div className="v">{closed.toLocaleString('ru-RU')}</div><div className="d"><span className="lab">за 30 дней</span></div></div>
+        <div className="stat"><div className="l">► выполнение плана</div><div className="v">{compl}%</div><div className="d"><span className={'delta '+(compl>=90?'up':'down')}>{closed}/{planned}</span></div></div>
+        <div className="stat"><div className="l">► в срок · среднее</div><div className="v">{avgOT}%</div><div className="d"><span className="lab">по выборке</span></div></div>
+        <div className="stat"><div className="l">► магазинов в отчёте</div><div className="v">{store==='all'?stores.length:1}</div><div className="d"><span className="lab">точек</span></div></div>
+      </div>
+
+      <div className="card">
+        <div className="h"><div className="t">Динамика закрытых маршрутов</div><div className="m">{store==='all'?'все магазины':store}</div></div>
+        <div className="b">
+          <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:190,display:'block'}} preserveAspectRatio="none">
+            <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--coral)" stopOpacity="0.32"/><stop offset="100%" stopColor="var(--coral)" stopOpacity="0"/></linearGradient></defs>
+            {[0.33,0.66].map((g,i)=>(<line key={i} x1={P} x2={W-P} y1={P+g*(H-2*P)} y2={P+g*(H-2*P)} stroke="var(--line)" strokeWidth="1"/>))}
+            {area && <path d={area} fill="url(#sg)"/>}
+            {line && <path d={line} fill="none" stroke="var(--coral)" strokeWidth="2.5" strokeLinejoin="round"/>}
+            {n>0 && <circle cx={xp(n-1)} cy={yp(series[n-1].v)} r="4" fill="var(--coral)"/>}
+          </svg>
         </div>
       </div>
 
       <div className="card">
-        <div className="h"><div className="t">Подключённые источники</div><div className="m">{SOURCES.length} активных</div></div>
+        <div className="h"><div className="t">По магазинам · итоги 30 дней</div><div className="m">{byStore.length} точек</div></div>
         <div className="b flush">
-          {SOURCES.map((s,i) => (
-            <div key={i} className="sync-row">
-              <div className="ico">{s.ic}</div>
-              <div>
-                <div className="name">{s.name}</div>
-                <div className="desc">{s.desc} · {s.items}</div>
-              </div>
-              <div></div>
-              <div style={{display:'flex',alignItems:'center',gap:14}}>
-                <div className="when"><b style={{color:'var(--green)',fontFamily:'inherit',fontSize:10,letterSpacing:'.12em'}}>● синхрон</b>{s.when}</div>
-                <button onClick={()=>doSync(s.name)} disabled={refreshing===s.name}>{refreshing===s.name ? '…' : 'сейчас'}</button>
-              </div>
-            </div>
-          ))}
+          <table className="tbl">
+            <thead><tr><th>Магазин</th><th>Проект</th><th>Закрыто</th><th>План</th><th>Выполнение</th><th>В срок</th></tr></thead>
+            <tbody>
+              {byStore.map((s,i)=>(
+                <tr key={i} style={{cursor:'pointer'}} onClick={()=>setStore(s.store)}>
+                  <td><span className="pri">{s.store}</span></td>
+                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
+                  <td><b style={{color:'var(--cream)'}}>{s.closed}</b></td>
+                  <td style={{color:'var(--cream-3)'}}>{s.planned}</td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{color:s.compl>=90?'var(--green)':'var(--warn)',fontWeight:600,minWidth:34}}>{s.compl}%</span>
+                      <div style={{flex:1,height:5,minWidth:40,borderRadius:4,background:'var(--line)',overflow:'hidden'}}><div style={{height:'100%',width:s.compl+'%',background:s.compl>=90?'var(--green)':'var(--warn)'}}></div></div>
+                    </div>
+                  </td>
+                  <td>{s.ot}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </Fragment>
