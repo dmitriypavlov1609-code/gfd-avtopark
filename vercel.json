@@ -1,2 +1,9 @@
-{ "version": 2, "cleanUrls": true,
-  "headers": [ { "source": "/(.*)", "headers": [ { "key": "X-Content-Type-Options", "value": "nosniff" } ] } ] }
+{
+  "version": 2,
+  "cleanUrls": true,
+  "headers": [
+    { "source": "/", "headers": [ { "key": "Cache-Control", "value": "no-cache, must-revalidate" } ] },
+    { "source": "/index.html", "headers": [ { "key": "Cache-Control", "value": "no-cache, must-revalidate" } ] },
+    { "source": "/(.*)", "headers": [ { "key": "X-Content-Type-Options", "value": "nosniff" } ] }
+  ]
+}

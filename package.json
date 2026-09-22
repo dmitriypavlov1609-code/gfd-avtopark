@@ -1,1 +1,11 @@
-{ "name": "gfd-avtopark", "version": "1.0.0", "private": true, "scripts": { "build": "echo static, no build" } }
+{
+  "name": "gfd-avtopark",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo static, no build",
+    "check": "node tools/fe-check.mjs",
+    "check:local": "node tools/fe-check.mjs http://localhost:3000/"
+  },
+  "devDependencies": { "playwright": "^1.43.0" }
+}

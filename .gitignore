@@ -1,4 +1,5 @@
 .vercel
 deploy.out
 node_modules
+screenshots
 *.log
