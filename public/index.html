@@ -40,20 +40,21 @@ body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
 
 .app{position:relative;z-index:1;display:grid;grid-template-columns:78px 1fr;gap:0;min-height:100vh;max-width:1360px;margin:0 auto}
 .rail{position:sticky;top:0;align-self:start;height:100vh;display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;}
-.rail .logo{width:44px;height:44px;border-radius:13px;background:var(--grad);display:grid;place-items:center;color:#fff;box-shadow:0 8px 22px -6px rgba(120,90,255,.6);margin-bottom:14px}
-.rail .logo svg{width:24px;height:24px}
+.rail .logo{width:44px;height:44px;border-radius:13px;background:transparent;display:grid;place-items:center;margin-bottom:14px}
+.rail .logo svg{width:27px;height:27px;stroke:url(#icoGrad);filter:drop-shadow(0 0 7px rgba(130,110,255,.7)) drop-shadow(0 0 13px rgba(255,90,160,.4))}
 .railnav{display:flex;flex-direction:column;gap:6px;flex:1}
-.nav{position:relative;width:46px;height:46px;border:0;border-radius:14px;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.2s}
-.nav svg{width:21px;height:21px}
-.nav:hover{color:var(--ink);background:var(--accent-soft)}
-.nav.active{color:#fff;background:var(--grad);box-shadow:0 8px 20px -6px rgba(120,90,255,.65)}
-:root[data-theme="light"] .nav.active{color:#fff}
+.nav{position:relative;width:46px;height:46px;border:0;border-radius:14px;background:transparent;display:grid;place-items:center;cursor:pointer;transition:.2s;opacity:.64}
+.nav svg{width:22px;height:22px;stroke:url(#icoGrad);filter:drop-shadow(0 0 4px rgba(120,120,255,.5));transition:filter .25s}
+.nav:hover{opacity:1}
+.nav.active{opacity:1}
+.nav.active::before{content:"";position:absolute;inset:3px;border-radius:50%;background:radial-gradient(circle,rgba(130,110,255,.34),rgba(255,90,160,.14) 55%,transparent 72%);filter:blur(3px)}
+.nav.active svg{filter:drop-shadow(0 0 8px rgba(150,110,255,.85)) drop-shadow(0 0 16px rgba(255,90,160,.5))}
 .nav .tip{position:absolute;left:56px;top:50%;transform:translateY(-50%) translateX(-6px);opacity:0;pointer-events:none;white-space:nowrap;background:var(--card-solid);border:1px solid var(--bd);color:var(--ink);font-size:12px;font-weight:600;padding:6px 10px;border-radius:9px;box-shadow:var(--shadow);transition:.18s;z-index:5}
 .nav:hover .tip{opacity:1;transform:translateY(-50%) translateX(0)}
 .rail .foot{display:flex;flex-direction:column;align-items:center;gap:10px}
 .themebtn{width:44px;height:44px;border-radius:14px;border:1px solid var(--bd);background:var(--card);color:var(--muted);cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(10px)}
 .themebtn:hover{color:var(--ink)}
-.themebtn svg{width:19px;height:19px}
+.themebtn svg{width:19px;height:19px;stroke:url(#icoGrad);filter:drop-shadow(0 0 4px rgba(120,120,255,.45))}
 .ava{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--g1),var(--g3));box-shadow:0 0 0 2px var(--bd)}
 
 .main{padding:22px 26px 60px;min-width:0}
@@ -154,6 +155,11 @@ footer{color:var(--faint);font-size:12px;text-align:center;margin-top:26px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="icoGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#4d9bff"/><stop offset=".5" stop-color="#9a5bff"/><stop offset="1" stop-color="#ff5da2"/>
+  </linearGradient>
+</defs></svg>
 <div class="app">
   <aside class="rail">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h13v11H1z"/><path d="M14 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18" r="1.7"/><circle cx="17" cy="18" r="1.7"/></svg></div>
