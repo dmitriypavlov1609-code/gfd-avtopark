@@ -15,7 +15,7 @@ const VIEWPORTS = [
   { name: "tablet", w: 768, h: 1024 },
   { name: "mobile", w: 390, h: 844 },
 ];
-const TABS = ["overview", "own", "hired", "stores", "stats"];
+const TABS = ["overview", "own", "hired", "stores", "stats", "messages"];
 
 // в браузере: найти пересечения видимых блоков (не вложенных, не намеренные оверлеи)
 const OVERLAP_FN = `() => {
