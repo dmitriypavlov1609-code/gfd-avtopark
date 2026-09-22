@@ -192,7 +192,7 @@ function Sidebar({page, setPage, mode}){
     <div className="side">
       <div className="side-brand">
         <div className="logo">Г</div>
-        <div className="name">ГФД<small>aboba dev × MiP · CRM</small></div>
+        <div className="name">ГФД<small>Автопарк · система учёта</small></div>
       </div>
       <div className="side-section">Меню</div>
       <div className="side-nav">
@@ -397,44 +397,79 @@ function Dashboard({setPage}){
   );
 }
 
-/* ----------------- BOOKINGS ----------------- */
+/* ----------------- ПРИВЛЕЧЁННЫЙ ПАРК (частники) ----------------- */
 function Bookings(){
-  const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? BOOKINGS : BOOKINGS.filter(b => b.status === filter);
+  const [rows,setRows]=useState([]);
+  const [filter,setFilter]=useState('all');
+  const [q,setQ]=useState('');
+  useEffect(()=>{ fetch('/data/hired-fleet.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
+
+  const SL={active:'Активен',soon:'Истекает',end:'Завершён'};
+  const SC={active:'#5DCB94',soon:'#FFB84A',end:'#8B8377'};
+  const pill=s=>{const c=SC[s]||'#8B8377';return <span style={{fontSize:'11.5px',fontWeight:600,padding:'3px 10px',borderRadius:'8px',color:c,background:c+'26',whiteSpace:'nowrap'}}>{SL[s]||s}</span>;};
+
+  const total=rows.length;
+  const onLine=rows.filter(r=>r.onLine).length;
+  const active=rows.filter(r=>r.status==='active').length;
+  const doneRoutes=rows.reduce((s,r)=>s+(r.routesDone||0),0);
+
+  const filtered=rows.filter(r=>{
+    const okF = filter==='all' || (filter==='online'?r.onLine:r.status===filter);
+    const okQ = !q || (r.plate+' '+r.contractor+' '+(r.projects||[]).join(' ')).toLowerCase().includes(q.toLowerCase());
+    return okF && okQ;
+  });
+
+  const download=()=>{
+    const head=['Госномер','Контрагент','Телефон','Дата регистрации','Маршрутов выполнено','Проекты','Статус','На линии','Ставка'];
+    const lines=[head.join(';'),...rows.map(r=>[r.plate,r.contractor,r.phone,r.registered,r.routesDone,(r.projects||[]).join(', '),SL[r.status]||r.status,r.onLine?'да':'нет',r.rate].join(';'))];
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ГФД_привлечённый_парк_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  };
+  const FB=(id,txt)=>(<button onClick={()=>setFilter(id)} style={{borderColor:filter===id?'var(--coral)':'var(--line-2)',color:filter===id?'var(--coral)':'var(--cream-2)'}}>{txt}</button>);
+
   return (
     <Fragment>
       <div className="page-head">
         <div>
-          <h1>Бронирования</h1>
-          <div className="sub">► {BOOKINGS.length} активных · последние 10 показано</div>
+          <h1>Привлечённый парк</h1>
+          <div className="sub">► частники · регистрация, маршруты, проекты</div>
         </div>
         <div className="actions">
-          <button onClick={()=>setFilter('all')} style={{borderColor: filter==='all' ? 'var(--coral)' : 'var(--line-2)', color: filter==='all' ? 'var(--coral)' : 'var(--cream-2)'}}>все</button>
-          <button onClick={()=>setFilter('active')} style={{borderColor: filter==='active' ? 'var(--coral)' : 'var(--line-2)', color: filter==='active' ? 'var(--coral)' : 'var(--cream-2)'}}>active</button>
-          <button onClick={()=>setFilter('pending')} style={{borderColor: filter==='pending' ? 'var(--coral)' : 'var(--line-2)', color: filter==='pending' ? 'var(--coral)' : 'var(--cream-2)'}}>pending</button>
-          <button onClick={()=>setFilter('done')} style={{borderColor: filter==='done' ? 'var(--coral)' : 'var(--line-2)', color: filter==='done' ? 'var(--coral)' : 'var(--cream-2)'}}>done</button>
-          <button className="primary">+ новая</button>
+          <button className="primary" onClick={download}>↓ Скачать отчёт</button>
         </div>
       </div>
 
+      <div className="stats">
+        <div className="stat"><div className="l">► всего частников</div><div className="v">{total}</div><div className="d"><span className="lab">в реестре</span></div></div>
+        <div className="stat"><div className="l">► на линии сегодня</div><div className="v">{onLine}</div><div className="d"><span className="delta up">{total?Math.round(onLine/total*100):0}%</span><span className="lab">от реестра</span></div></div>
+        <div className="stat"><div className="l">► активные договоры</div><div className="v">{active}</div><div className="d"><span className="lab">не завершены</span></div></div>
+        <div className="stat"><div className="l">► маршрутов выполнено</div><div className="v">{doneRoutes.toLocaleString('ru-RU')}</div><div className="d"><span className="lab">за всё время</span></div></div>
+      </div>
+
       <div className="card">
+        <div className="h">
+          <div className="t">Реестр частников</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: номер / ИП / проект" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:200}}/>
+            {FB('all','все')}{FB('online','на линии')}{FB('active','активные')}{FB('soon','истекают')}{FB('end','завершённые')}
+          </div>
+        </div>
         <div className="b flush">
           <table className="tbl">
             <thead><tr>
-              <th>ID</th><th>Клиент</th><th>Машина</th><th>Период</th><th>Канал</th><th>Источник</th><th>Сумма</th><th>Оплачено</th><th>Статус</th>
+              <th>Госномер</th><th>Контрагент</th><th>Регистрация</th><th>Маршрутов</th><th>Проекты</th><th>Ставка</th><th>На линии</th><th>Статус</th>
             </tr></thead>
             <tbody>
-              {filtered.map(b=>(
-                <tr key={b.id}>
-                  <td><span className="id">{b.id}</span></td>
-                  <td><span className="pri">{b.cust}</span><span className="sec">{b.phone} · <span className="lang-flag">{b.lang}</span></span></td>
-                  <td>{b.car}</td>
-                  <td><span className="id">{b.from} → {b.to}</span></td>
-                  <td><span className="chan">{b.ch}</span></td>
-                  <td style={{color:'var(--cream-3)',fontSize:12}}>{b.src}</td>
-                  <td><b style={{color:'var(--cream)'}}>€{b.total}</b></td>
-                  <td><span style={{color: b.paid >= b.total ? 'var(--green)' : 'var(--warn)', fontWeight:600}}>€{b.paid}</span></td>
-                  <td><span className={'pill ' + b.status}>{b.status}</span></td>
+              {filtered.map((r,i)=>(
+                <tr key={i}>
+                  <td><span className="id">{r.plate}</span></td>
+                  <td><span className="pri">{r.contractor}</span><span className="sec">{r.phone}</span></td>
+                  <td style={{color:'var(--cream-3)',fontSize:12}}>{r.registered}</td>
+                  <td><b style={{color:'var(--cream)'}}>{r.routesDone}</b></td>
+                  <td style={{fontSize:12,color:'var(--cream-2)',maxWidth:220}}>{(r.projects||[]).join(', ')}</td>
+                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12}}>{r.rate} ₽</td>
+                  <td>{r.onLine ? <span style={{color:'var(--green)',fontWeight:600}}>● да</span> : <span style={{color:'var(--cream-3)'}}>—</span>}</td>
+                  <td>{pill(r.status)}</td>
                 </tr>
               ))}
             </tbody>

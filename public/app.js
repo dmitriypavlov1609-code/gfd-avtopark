@@ -882,7 +882,7 @@ function Sidebar({
     className: "logo"
   }, "Г"), /*#__PURE__*/React.createElement("div", {
     className: "name"
-  }, "ГФД", /*#__PURE__*/React.createElement("small", null, "aboba dev × MiP · CRM"))), /*#__PURE__*/React.createElement("div", {
+  }, "ГФД", /*#__PURE__*/React.createElement("small", null, "Автопарк · система учёта"))), /*#__PURE__*/React.createElement("div", {
     className: "side-section"
   }, "Меню"), /*#__PURE__*/React.createElement("div", {
     className: "side-nav"
@@ -1259,79 +1259,189 @@ function Dashboard({
   }, r.v))))))));
 }
 
-/* ----------------- BOOKINGS ----------------- */
+/* ----------------- ПРИВЛЕЧЁННЫЙ ПАРК (частники) ----------------- */
 function Bookings() {
+  const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? BOOKINGS : BOOKINGS.filter(b => b.status === filter);
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    fetch('/data/hired-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
+  }, []);
+  const SL = {
+    active: 'Активен',
+    soon: 'Истекает',
+    end: 'Завершён'
+  };
+  const SC = {
+    active: '#5DCB94',
+    soon: '#FFB84A',
+    end: '#8B8377'
+  };
+  const pill = s => {
+    const c = SC[s] || '#8B8377';
+    return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: '11.5px',
+        fontWeight: 600,
+        padding: '3px 10px',
+        borderRadius: '8px',
+        color: c,
+        background: c + '26',
+        whiteSpace: 'nowrap'
+      }
+    }, SL[s] || s);
+  };
+  const total = rows.length;
+  const onLine = rows.filter(r => r.onLine).length;
+  const active = rows.filter(r => r.status === 'active').length;
+  const doneRoutes = rows.reduce((s, r) => s + (r.routesDone || 0), 0);
+  const filtered = rows.filter(r => {
+    const okF = filter === 'all' || (filter === 'online' ? r.onLine : r.status === filter);
+    const okQ = !q || (r.plate + ' ' + r.contractor + ' ' + (r.projects || []).join(' ')).toLowerCase().includes(q.toLowerCase());
+    return okF && okQ;
+  });
+  const download = () => {
+    const head = ['Госномер', 'Контрагент', 'Телефон', 'Дата регистрации', 'Маршрутов выполнено', 'Проекты', 'Статус', 'На линии', 'Ставка'];
+    const lines = [head.join(';'), ...rows.map(r => [r.plate, r.contractor, r.phone, r.registered, r.routesDone, (r.projects || []).join(', '), SL[r.status] || r.status, r.onLine ? 'да' : 'нет', r.rate].join(';'))];
+    const blob = new Blob(['﻿' + lines.join('\r\n')], {
+      type: 'text/csv;charset=utf-8'
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ГФД_привлечённый_парк_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  const FB = (id, txt) => /*#__PURE__*/React.createElement("button", {
+    onClick: () => setFilter(id),
+    style: {
+      borderColor: filter === id ? 'var(--coral)' : 'var(--line-2)',
+      color: filter === id ? 'var(--coral)' : 'var(--cream-2)'
+    }
+  }, txt);
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Бронирования"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Привлечённый парк"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► ", BOOKINGS.length, " активных · последние 10 показано")), /*#__PURE__*/React.createElement("div", {
+  }, "► частники · регистрация, маршруты, проекты")), /*#__PURE__*/React.createElement("div", {
     className: "actions"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setFilter('all'),
-    style: {
-      borderColor: filter === 'all' ? 'var(--coral)' : 'var(--line-2)',
-      color: filter === 'all' ? 'var(--coral)' : 'var(--cream-2)'
-    }
-  }, "все"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setFilter('active'),
-    style: {
-      borderColor: filter === 'active' ? 'var(--coral)' : 'var(--line-2)',
-      color: filter === 'active' ? 'var(--coral)' : 'var(--cream-2)'
-    }
-  }, "active"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setFilter('pending'),
-    style: {
-      borderColor: filter === 'pending' ? 'var(--coral)' : 'var(--line-2)',
-      color: filter === 'pending' ? 'var(--coral)' : 'var(--cream-2)'
-    }
-  }, "pending"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setFilter('done'),
-    style: {
-      borderColor: filter === 'done' ? 'var(--coral)' : 'var(--line-2)',
-      color: filter === 'done' ? 'var(--coral)' : 'var(--cream-2)'
-    }
-  }, "done"), /*#__PURE__*/React.createElement("button", {
-    className: "primary"
-  }, "+ новая"))), /*#__PURE__*/React.createElement("div", {
+    className: "primary",
+    onClick: download
+  }, "↓ Скачать отчёт"))), /*#__PURE__*/React.createElement("div", {
+    className: "stats"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► всего частников"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, total), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "в реестре"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► на линии сегодня"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, onLine), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "delta up"
+  }, total ? Math.round(onLine / total * 100) : 0, "%"), /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "от реестра"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► активные договоры"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, active), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "не завершены"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► маршрутов выполнено"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, doneRoutes.toLocaleString('ru-RU')), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "за всё время")))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Реестр частников"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "поиск: номер / ИП / проект",
+    style: {
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      color: 'var(--cream)',
+      padding: '6px 10px',
+      fontSize: 12,
+      minWidth: 200
+    }
+  }), FB('all', 'все'), FB('online', 'на линии'), FB('active', 'активные'), FB('soon', 'истекают'), FB('end', 'завершённые'))), /*#__PURE__*/React.createElement("div", {
     className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "ID"), /*#__PURE__*/React.createElement("th", null, "Клиент"), /*#__PURE__*/React.createElement("th", null, "Машина"), /*#__PURE__*/React.createElement("th", null, "Период"), /*#__PURE__*/React.createElement("th", null, "Канал"), /*#__PURE__*/React.createElement("th", null, "Источник"), /*#__PURE__*/React.createElement("th", null, "Сумма"), /*#__PURE__*/React.createElement("th", null, "Оплачено"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(b => /*#__PURE__*/React.createElement("tr", {
-    key: b.id
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Госномер"), /*#__PURE__*/React.createElement("th", null, "Контрагент"), /*#__PURE__*/React.createElement("th", null, "Регистрация"), /*#__PURE__*/React.createElement("th", null, "Маршрутов"), /*#__PURE__*/React.createElement("th", null, "Проекты"), /*#__PURE__*/React.createElement("th", null, "Ставка"), /*#__PURE__*/React.createElement("th", null, "На линии"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "id"
-  }, b.id)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, r.plate)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
     className: "pri"
-  }, b.cust), /*#__PURE__*/React.createElement("span", {
+  }, r.contractor), /*#__PURE__*/React.createElement("span", {
     className: "sec"
-  }, b.phone, " · ", /*#__PURE__*/React.createElement("span", {
-    className: "lang-flag"
-  }, b.lang))), /*#__PURE__*/React.createElement("td", null, b.car), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "id"
-  }, b.from, " → ", b.to)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: "chan"
-  }, b.ch)), /*#__PURE__*/React.createElement("td", {
+  }, r.phone)), /*#__PURE__*/React.createElement("td", {
     style: {
       color: 'var(--cream-3)',
       fontSize: 12
     }
-  }, b.src), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
+  }, r.registered), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
     style: {
       color: 'var(--cream)'
     }
-  }, "€", b.total)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, r.routesDone)), /*#__PURE__*/React.createElement("td", {
     style: {
-      color: b.paid >= b.total ? 'var(--green)' : 'var(--warn)',
+      fontSize: 12,
+      color: 'var(--cream-2)',
+      maxWidth: 220
+    }
+  }, (r.projects || []).join(', ')), /*#__PURE__*/React.createElement("td", {
+    style: {
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 12
+    }
+  }, r.rate, " ₽"), /*#__PURE__*/React.createElement("td", null, r.onLine ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--green)',
       fontWeight: 600
     }
-  }, "€", b.paid)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
-    className: 'pill ' + b.status
-  }, b.status)))))))));
+  }, "● да") : /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-3)'
+    }
+  }, "—")), /*#__PURE__*/React.createElement("td", null, pill(r.status)))))))));
 }
 
 /* ----------------- FLEET ----------------- */
