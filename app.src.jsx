@@ -112,9 +112,9 @@ function Sidebar({page, setPage, mode, open}){
           </div>
         ))}
       </div>
-      <div className="side-foot">
-        <div className="avatar">МК</div>
-        <div className="user">Максим Кравченко<small>Manager · BG office</small></div>
+      <div className="side-foot" onClick={()=>{ if(confirm('Выйти из системы?')){ sessionStorage.removeItem('gfd_auth'); window.location.reload(); } }} style={{cursor:'pointer'}} title="Выйти">
+        <div className="avatar">А</div>
+        <div className="user">Администратор<small>Выйти →</small></div>
       </div>
     </div>
   );
@@ -162,19 +162,29 @@ function aggSeries(daily,get,period,mode){
   if(period==='week'){const wk={};daily.forEach(d=>{const dt=new Date(d.date);const mon=new Date(dt);mon.setDate(dt.getDate()-((dt.getDay()+6)%7));const k=mon.toISOString().slice(0,10);(wk[k]=wk[k]||[]).push(get(d));});return Object.entries(wk).slice(-12).map(([k,a])=>({label:k.slice(8,10)+'.'+k.slice(5,7),v:agg(a)}));}
   const mo={};const NM=['','янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];daily.forEach(d=>{const k=d.date.slice(0,7);(mo[k]=mo[k]||[]).push(get(d));});return Object.entries(mo).slice(-6).map(([k,a])=>({label:NM[+k.slice(5,7)],v:agg(a)}));
 }
-function AreaChart({series,color='var(--coral)',height=190,gid='g'}){
+function AreaChart({series,color='var(--coral)',height=190,gid='g',unit=''}){
+  const [hi,setHi]=useState(null);
   const W=680,H=height,P=10,n=series.length;
   const max=Math.max(1,...series.map(s=>s.v)),min=Math.min(0,...series.map(s=>s.v));
   const xp=i=>n>1?P+i*(W-2*P)/(n-1):W/2, yp=v=>(H-P)-(v-min)/((max-min)||1)*(H-2*P);
   const line=series.map((s,i)=>(i?'L':'M')+xp(i).toFixed(1)+' '+yp(s.v).toFixed(1)).join(' ');
   const area=n?line+` L ${xp(n-1).toFixed(1)} ${H-P} L ${xp(0).toFixed(1)} ${H-P} Z`:'';
-  return (<div>
+  const onMove=e=>{ if(!n) return; const r=e.currentTarget.getBoundingClientRect(); let i=Math.round(((e.clientX-r.left)/r.width)*(n-1)); i=Math.max(0,Math.min(n-1,i)); setHi(i); };
+  const hpct=hi!=null?(xp(hi)/W*100):0;
+  return (<div style={{position:'relative'}} onMouseMove={onMove} onMouseLeave={()=>setHi(null)}>
+    {hi!=null && series[hi] && (
+      <div style={{position:'absolute',top:-2,left:`${Math.max(6,Math.min(94,hpct))}%`,transform:'translateX(-50%)',background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,padding:'4px 10px',fontSize:12,whiteSpace:'nowrap',zIndex:2,pointerEvents:'none',boxShadow:'0 6px 20px -6px rgba(0,0,0,.6)'}}>
+        <span style={{color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>{series[hi].label}</span>{' '}
+        <b style={{color}}>{series[hi].v}{unit}</b>
+      </div>
+    )}
     <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height,display:'block'}} preserveAspectRatio="none">
       <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.32"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
       {[0.25,0.5,0.75].map((g,i)=>(<line key={i} x1={P} x2={W-P} y1={P+g*(H-2*P)} y2={P+g*(H-2*P)} stroke="var(--line)" strokeWidth="1"/>))}
       {area&&<path d={area} fill={`url(#${gid})`}/>}
       {line&&<path d={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round"/>}
-      {n>0&&<circle cx={xp(n-1)} cy={yp(series[n-1].v)} r="4" fill={color}/>}
+      {hi!=null && <line x1={xp(hi)} x2={xp(hi)} y1={P} y2={H-P} stroke={color} strokeWidth="1" strokeDasharray="4 3" opacity="0.6"/>}
+      {series.map((s,i)=>(<circle key={i} cx={xp(i)} cy={yp(s.v)} r={hi===i?4.5:2.2} fill={color} stroke="var(--panel)" strokeWidth={hi===i?1.5:0}/>))}
     </svg>
     <div className="util-legend" style={{marginTop:6,justifyContent:'space-between',color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>
       {series.filter((_,i)=>n<=12||i%Math.ceil(n/12)===0).map((s,i)=>(<span key={i}>{s.label}</span>))}
@@ -312,21 +322,7 @@ function Dashboard({setPage}){
               <b style={{color:'var(--coral)',fontFamily:"'JetBrains Mono', monospace",fontSize:18}}>{pickedVal!=null?pickedVal:'нет данных'}</b>
             </div>
           )}
-          <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:210,display:'block'}} preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--coral)" stopOpacity="0.35"/>
-                <stop offset="100%" stopColor="var(--coral)" stopOpacity="0"/>
-              </linearGradient>
-            </defs>
-            {[0.25,0.5,0.75].map((g,i)=>(<line key={i} x1={P} x2={W-P} y1={P+g*(H-2*P)} y2={P+g*(H-2*P)} stroke="var(--line)" strokeWidth="1"/>))}
-            {area && <path d={area} fill="url(#rg)"/>}
-            {line && <path d={line} fill="none" stroke="var(--coral)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>}
-            {n>0 && <circle cx={xp(n-1)} cy={yp(series[n-1].v)} r="4.5" fill="var(--coral)" stroke="var(--panel)" strokeWidth="2"/>}
-          </svg>
-          <div className="util-legend" style={{marginTop:6,justifyContent:'space-between',color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>
-            {series.filter((_,i)=>n<=12||i%Math.ceil(n/12)===0).map((s,i)=>(<span key={i}>{s.label}</span>))}
-          </div>
+          <AreaChart series={series} color="var(--coral)" gid="rg" height={210}/>
         </div>
       </div>
 
@@ -599,17 +595,8 @@ function Fleet(){
           </div>
         </div>
         <div className="b">
-          <svg viewBox={`0 0 ${KW} ${KH}`} style={{width:'100%',height:190,display:'block'}} preserveAspectRatio="none">
-            <defs><linearGradient id="kg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--green)" stopOpacity="0.30"/><stop offset="100%" stopColor="var(--green)" stopOpacity="0"/></linearGradient></defs>
-            {[0.25,0.5,0.75].map((g,i)=>(<line key={i} x1={KP} x2={KW-KP} y1={KP+g*(KH-2*KP)} y2={KP+g*(KH-2*KP)} stroke="var(--line)" strokeWidth="1"/>))}
-            {karea && <path d={karea} fill="url(#kg)"/>}
-            {kline && <path d={kline} fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinejoin="round"/>}
-            {kn>0 && <circle cx={kx(kn-1)} cy={ky(kSeries[kn-1].v)} r="4" fill="var(--green)"/>}
-          </svg>
-          <div className="util-legend" style={{marginTop:6,justifyContent:'space-between',color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>
-            {kSeries.filter((_,i)=>kn<=12||i%Math.ceil(kn/12)===0).map((s,i)=>(<span key={i}>{s.label}</span>))}
-          </div>
-          <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--line)',display:'flex',gap:24,fontSize:13}}>
+          <AreaChart series={kSeries} color="var(--green)" gid="kg" height={190} unit="%"/>
+          <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--line)',display:'flex',gap:24,fontSize:13,flexWrap:'wrap'}}>
             <span style={{color:'var(--cream-2)'}}>Исправны: <b style={{color:'var(--cream)'}}>{total-rem}</b> / {total}</span>
             <span style={{color:'var(--cream-2)'}}>В ремонте: <b style={{color:'var(--warn)'}}>{rem}</b></span>
             <span style={{color:'var(--cream-2)'}}>КТГ сейчас: <b style={{color:ktgNow>=75?'var(--green)':'var(--warn)'}}>{ktgNow}%</b></span>
@@ -754,7 +741,7 @@ function Conversations(){
             <div className="l">► {l} {metric===k?'▾':''}</div><div className="v">{sum30(k)}</div><div className="d"><span className="lab">клик → график</span></div>
           </div>
         ))}
-        <div className="stat"><div className="l">► на Лемана Про</div><div className="v">{lemana}</div><div className="d"><span className="delta up">{total?Math.round(lemana/total*100):0}%</span><span className="lab">принято {hired}</span></div></div>
+        <div className="stat" onClick={()=>setFp(fp==='Лемана Про'?'all':'Лемана Про')} style={{cursor:'pointer',outline:fp==='Лемана Про'?'1.5px solid var(--coral)':'1.5px solid transparent',outlineOffset:-1}}><div className="l">► на Лемана Про {fp==='Лемана Про'?'▾':''}</div><div className="v">{lemana}</div><div className="d"><span className="delta up">{total?Math.round(lemana/total*100):0}%</span><span className="lab">клик → фильтр</span></div></div>
       </div>
 
       <div className="card">
@@ -1032,13 +1019,7 @@ function SyncPage(){
       <div className="card">
         <div className="h"><div className="t">Динамика закрытых маршрутов</div><div className="m">{store==='all'?'все магазины':store}</div></div>
         <div className="b">
-          <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:190,display:'block'}} preserveAspectRatio="none">
-            <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--coral)" stopOpacity="0.32"/><stop offset="100%" stopColor="var(--coral)" stopOpacity="0"/></linearGradient></defs>
-            {[0.33,0.66].map((g,i)=>(<line key={i} x1={P} x2={W-P} y1={P+g*(H-2*P)} y2={P+g*(H-2*P)} stroke="var(--line)" strokeWidth="1"/>))}
-            {area && <path d={area} fill="url(#sg)"/>}
-            {line && <path d={line} fill="none" stroke="var(--coral)" strokeWidth="2.5" strokeLinejoin="round"/>}
-            {n>0 && <circle cx={xp(n-1)} cy={yp(series[n-1].v)} r="4" fill="var(--coral)"/>}
-          </svg>
+          <AreaChart series={series} color="var(--coral)" gid="sg" height={190}/>
         </div>
       </div>
 
@@ -1126,7 +1107,6 @@ function Settings(){
             <div className="field">
               <label>модель AI-агента (tool use)</label>
               <input value="claude-sonnet-5" readOnly />
-              <div className="help">Ключ Anthropic хранится в env сервера (Vercel), в браузере не виден — как в ОБЕ2. Агент ходит через прокси /api/ai-chat.</div>
             </div>
             <div className="field">
               <label>модель быстрых сводок</label>
@@ -1708,15 +1688,6 @@ function Reports(){
         </div>
       </div>
 
-      <div style={{height:14}}/>
-      <div className="card">
-        <div className="h"><div className="t">Отправка в Telegram</div><div className="m">@gfd_otchet_bot</div></div>
-        <div className="b">
-          <p style={{color:'var(--cream-2)',fontSize:13,margin:0,lineHeight:1.6}}>
-            «✈ В Telegram» отправляет отчёт файлом в чат руководителя за выбранный период. Автоматическая рассылка по расписанию настраивается в «Настройках».
-          </p>
-        </div>
-      </div>
     </Fragment>
   );
 }

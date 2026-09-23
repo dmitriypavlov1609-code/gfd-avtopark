@@ -313,12 +313,22 @@ function Sidebar({
     className: 'side-item ' + (page === n.id ? 'active' : ''),
     onClick: () => setPage(n.id)
   }, n.ic, /*#__PURE__*/React.createElement("span", null, n.label)))), /*#__PURE__*/React.createElement("div", {
-    className: "side-foot"
+    className: "side-foot",
+    onClick: () => {
+      if (confirm('Выйти из системы?')) {
+        sessionStorage.removeItem('gfd_auth');
+        window.location.reload();
+      }
+    },
+    style: {
+      cursor: 'pointer'
+    },
+    title: "Выйти"
   }, /*#__PURE__*/React.createElement("div", {
     className: "avatar"
-  }, "МК"), /*#__PURE__*/React.createElement("div", {
+  }, "А"), /*#__PURE__*/React.createElement("div", {
     className: "user"
-  }, "Максим Кравченко", /*#__PURE__*/React.createElement("small", null, "Manager · BG office"))));
+  }, "Администратор", /*#__PURE__*/React.createElement("small", null, "Выйти →"))));
 }
 function Topbar({
   crumb,
@@ -446,8 +456,10 @@ function AreaChart({
   series,
   color = 'var(--coral)',
   height = 190,
-  gid = 'g'
+  gid = 'g',
+  unit = ''
 }) {
+  const [hi, setHi] = useState(null);
   const W = 680,
     H = height,
     P = 10,
@@ -458,7 +470,47 @@ function AreaChart({
     yp = v => H - P - (v - min) / (max - min || 1) * (H - 2 * P);
   const line = series.map((s, i) => (i ? 'L' : 'M') + xp(i).toFixed(1) + ' ' + yp(s.v).toFixed(1)).join(' ');
   const area = n ? line + ` L ${xp(n - 1).toFixed(1)} ${H - P} L ${xp(0).toFixed(1)} ${H - P} Z` : '';
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("svg", {
+  const onMove = e => {
+    if (!n) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    let i = Math.round((e.clientX - r.left) / r.width * (n - 1));
+    i = Math.max(0, Math.min(n - 1, i));
+    setHi(i);
+  };
+  const hpct = hi != null ? xp(hi) / W * 100 : 0;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    },
+    onMouseMove: onMove,
+    onMouseLeave: () => setHi(null)
+  }, hi != null && series[hi] && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: -2,
+      left: `${Math.max(6, Math.min(94, hpct))}%`,
+      transform: 'translateX(-50%)',
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      borderRadius: 8,
+      padding: '4px 10px',
+      fontSize: 12,
+      whiteSpace: 'nowrap',
+      zIndex: 2,
+      pointerEvents: 'none',
+      boxShadow: '0 6px 20px -6px rgba(0,0,0,.6)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-3)',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 10.5
+    }
+  }, series[hi].label), ' ', /*#__PURE__*/React.createElement("b", {
+    style: {
+      color
+    }
+  }, series[hi].v, unit)), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${W} ${H}`,
     style: {
       width: '100%',
@@ -497,12 +549,24 @@ function AreaChart({
     stroke: color,
     strokeWidth: "2.5",
     strokeLinejoin: "round"
-  }), n > 0 && /*#__PURE__*/React.createElement("circle", {
-    cx: xp(n - 1),
-    cy: yp(series[n - 1].v),
-    r: "4",
-    fill: color
-  })), /*#__PURE__*/React.createElement("div", {
+  }), hi != null && /*#__PURE__*/React.createElement("line", {
+    x1: xp(hi),
+    x2: xp(hi),
+    y1: P,
+    y2: H - P,
+    stroke: color,
+    strokeWidth: "1",
+    strokeDasharray: "4 3",
+    opacity: "0.6"
+  }), series.map((s, i) => /*#__PURE__*/React.createElement("circle", {
+    key: i,
+    cx: xp(i),
+    cy: yp(s.v),
+    r: hi === i ? 4.5 : 2.2,
+    fill: color,
+    stroke: "var(--panel)",
+    strokeWidth: hi === i ? 1.5 : 0
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "util-legend",
     style: {
       marginTop: 6,
@@ -793,65 +857,12 @@ function Dashboard({
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 18
     }
-  }, pickedVal != null ? pickedVal : 'нет данных')), /*#__PURE__*/React.createElement("svg", {
-    viewBox: `0 0 ${W} ${H}`,
-    style: {
-      width: '100%',
-      height: 210,
-      display: 'block'
-    },
-    preserveAspectRatio: "none"
-  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
-    id: "rg",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React.createElement("stop", {
-    offset: "0%",
-    stopColor: "var(--coral)",
-    stopOpacity: "0.35"
-  }), /*#__PURE__*/React.createElement("stop", {
-    offset: "100%",
-    stopColor: "var(--coral)",
-    stopOpacity: "0"
-  }))), [0.25, 0.5, 0.75].map((g, i) => /*#__PURE__*/React.createElement("line", {
-    key: i,
-    x1: P,
-    x2: W - P,
-    y1: P + g * (H - 2 * P),
-    y2: P + g * (H - 2 * P),
-    stroke: "var(--line)",
-    strokeWidth: "1"
-  })), area && /*#__PURE__*/React.createElement("path", {
-    d: area,
-    fill: "url(#rg)"
-  }), line && /*#__PURE__*/React.createElement("path", {
-    d: line,
-    fill: "none",
-    stroke: "var(--coral)",
-    strokeWidth: "2.5",
-    strokeLinejoin: "round",
-    strokeLinecap: "round"
-  }), n > 0 && /*#__PURE__*/React.createElement("circle", {
-    cx: xp(n - 1),
-    cy: yp(series[n - 1].v),
-    r: "4.5",
-    fill: "var(--coral)",
-    stroke: "var(--panel)",
-    strokeWidth: "2"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "util-legend",
-    style: {
-      marginTop: 6,
-      justifyContent: 'space-between',
-      color: 'var(--cream-3)',
-      fontFamily: "'JetBrains Mono', monospace",
-      fontSize: 10.5
-    }
-  }, series.filter((_, i) => n <= 12 || i % Math.ceil(n / 12) === 0).map((s, i) => /*#__PURE__*/React.createElement("span", {
-    key: i
-  }, s.label))))), /*#__PURE__*/React.createElement("div", {
+  }, pickedVal != null ? pickedVal : 'нет данных')), /*#__PURE__*/React.createElement(AreaChart, {
+    series: series,
+    color: "var(--coral)",
+    gid: "rg",
+    height: 210
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "grid-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -1583,69 +1594,21 @@ function Fleet() {
     }
   }, ktgNow, "%"), KB('day', 'день'), KB('week', 'неделя'), KB('month', 'месяц'))), /*#__PURE__*/React.createElement("div", {
     className: "b"
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: `0 0 ${KW} ${KH}`,
-    style: {
-      width: '100%',
-      height: 190,
-      display: 'block'
-    },
-    preserveAspectRatio: "none"
-  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
-    id: "kg",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React.createElement("stop", {
-    offset: "0%",
-    stopColor: "var(--green)",
-    stopOpacity: "0.30"
-  }), /*#__PURE__*/React.createElement("stop", {
-    offset: "100%",
-    stopColor: "var(--green)",
-    stopOpacity: "0"
-  }))), [0.25, 0.5, 0.75].map((g, i) => /*#__PURE__*/React.createElement("line", {
-    key: i,
-    x1: KP,
-    x2: KW - KP,
-    y1: KP + g * (KH - 2 * KP),
-    y2: KP + g * (KH - 2 * KP),
-    stroke: "var(--line)",
-    strokeWidth: "1"
-  })), karea && /*#__PURE__*/React.createElement("path", {
-    d: karea,
-    fill: "url(#kg)"
-  }), kline && /*#__PURE__*/React.createElement("path", {
-    d: kline,
-    fill: "none",
-    stroke: "var(--green)",
-    strokeWidth: "2.5",
-    strokeLinejoin: "round"
-  }), kn > 0 && /*#__PURE__*/React.createElement("circle", {
-    cx: kx(kn - 1),
-    cy: ky(kSeries[kn - 1].v),
-    r: "4",
-    fill: "var(--green)"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "util-legend",
-    style: {
-      marginTop: 6,
-      justifyContent: 'space-between',
-      color: 'var(--cream-3)',
-      fontFamily: "'JetBrains Mono', monospace",
-      fontSize: 10.5
-    }
-  }, kSeries.filter((_, i) => kn <= 12 || i % Math.ceil(kn / 12) === 0).map((s, i) => /*#__PURE__*/React.createElement("span", {
-    key: i
-  }, s.label))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(AreaChart, {
+    series: kSeries,
+    color: "var(--green)",
+    gid: "kg",
+    height: 190,
+    unit: "%"
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 12,
       paddingTop: 12,
       borderTop: '1px solid var(--line)',
       display: 'flex',
       gap: 24,
-      fontSize: 13
+      fontSize: 13,
+      flexWrap: 'wrap'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -2004,10 +1967,16 @@ function Conversations() {
   }, /*#__PURE__*/React.createElement("span", {
     className: "lab"
   }, "клик → график")))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
+    className: "stat",
+    onClick: () => setFp(fp === 'Лемана Про' ? 'all' : 'Лемана Про'),
+    style: {
+      cursor: 'pointer',
+      outline: fp === 'Лемана Про' ? '1.5px solid var(--coral)' : '1.5px solid transparent',
+      outlineOffset: -1
+    }
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
-  }, "► на Лемана Про"), /*#__PURE__*/React.createElement("div", {
+  }, "► на Лемана Про ", fp === 'Лемана Про' ? '▾' : ''), /*#__PURE__*/React.createElement("div", {
     className: "v"
   }, lemana), /*#__PURE__*/React.createElement("div", {
     className: "d"
@@ -2015,7 +1984,7 @@ function Conversations() {
     className: "delta up"
   }, total ? Math.round(lemana / total * 100) : 0, "%"), /*#__PURE__*/React.createElement("span", {
     className: "lab"
-  }, "принято ", hired)))), /*#__PURE__*/React.createElement("div", {
+  }, "клик → фильтр")))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
@@ -2752,51 +2721,12 @@ function SyncPage() {
     className: "m"
   }, store === 'all' ? 'все магазины' : store)), /*#__PURE__*/React.createElement("div", {
     className: "b"
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: `0 0 ${W} ${H}`,
-    style: {
-      width: '100%',
-      height: 190,
-      display: 'block'
-    },
-    preserveAspectRatio: "none"
-  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
-    id: "sg",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React.createElement("stop", {
-    offset: "0%",
-    stopColor: "var(--coral)",
-    stopOpacity: "0.32"
-  }), /*#__PURE__*/React.createElement("stop", {
-    offset: "100%",
-    stopColor: "var(--coral)",
-    stopOpacity: "0"
-  }))), [0.33, 0.66].map((g, i) => /*#__PURE__*/React.createElement("line", {
-    key: i,
-    x1: P,
-    x2: W - P,
-    y1: P + g * (H - 2 * P),
-    y2: P + g * (H - 2 * P),
-    stroke: "var(--line)",
-    strokeWidth: "1"
-  })), area && /*#__PURE__*/React.createElement("path", {
-    d: area,
-    fill: "url(#sg)"
-  }), line && /*#__PURE__*/React.createElement("path", {
-    d: line,
-    fill: "none",
-    stroke: "var(--coral)",
-    strokeWidth: "2.5",
-    strokeLinejoin: "round"
-  }), n > 0 && /*#__PURE__*/React.createElement("circle", {
-    cx: xp(n - 1),
-    cy: yp(series[n - 1].v),
-    r: "4",
-    fill: "var(--coral)"
-  })))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(AreaChart, {
+    series: series,
+    color: "var(--coral)",
+    gid: "sg",
+    height: 190
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
@@ -3045,9 +2975,7 @@ function Settings() {
   }, /*#__PURE__*/React.createElement("label", null, "модель AI-агента (tool use)"), /*#__PURE__*/React.createElement("input", {
     value: "claude-sonnet-5",
     readOnly: true
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "help"
-  }, "Ключ Anthropic хранится в env сервера (Vercel), в браузере не виден — как в ОБЕ2. Агент ходит через прокси /api/ai-chat.")), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "field"
   }, /*#__PURE__*/React.createElement("label", null, "модель быстрых сводок"), /*#__PURE__*/React.createElement("input", {
     value: "claude-haiku-4-5",
@@ -4191,28 +4119,7 @@ function Reports() {
   }, "↓ Скачать"), /*#__PURE__*/React.createElement("button", {
     onClick: () => sendTG(r),
     disabled: status[r.key] === '…'
-  }, "✈ В Telegram")))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 14
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "t"
-  }, "Отправка в Telegram"), /*#__PURE__*/React.createElement("div", {
-    className: "m"
-  }, "@gfd_otchet_bot")), /*#__PURE__*/React.createElement("div", {
-    className: "b"
-  }, /*#__PURE__*/React.createElement("p", {
-    style: {
-      color: 'var(--cream-2)',
-      fontSize: 13,
-      margin: 0,
-      lineHeight: 1.6
-    }
-  }, "«✈ В Telegram» отправляет отчёт файлом в чат руководителя за выбранный период. Автоматическая рассылка по расписанию настраивается в «Настройках»."))));
+  }, "✈ В Telegram")))))));
 }
 function App() {
   const [page, setPageRaw] = useState('dash');
