@@ -308,11 +308,11 @@ function Dashboard({setPage}){
               <tbody>
                 {byProject.map((r,i)=>(
                   <tr key={i}>
-                    <td><span className="pri">{r.project}</span></td>
-                    <td>{r.own}</td>
-                    <td>{r.hired}</td>
-                    <td><b style={{color:'var(--cream)'}}>{r.total}</b></td>
-                    <td style={{width:120}}>
+                    <td data-label="Проект"><span className="pri">{r.project}</span></td>
+                    <td data-label="Свои">{r.own}</td>
+                    <td data-label="Частники">{r.hired}</td>
+                    <td data-label="Всего"><b style={{color:'var(--cream)'}}>{r.total}</b></td>
+                    <td className="cellbar" style={{width:120}}>
                       <div style={{height:6,borderRadius:4,background:'var(--line)',overflow:'hidden'}}>
                         <div style={{height:'100%',width:(r.total/maxProj*100)+'%',background:'var(--coral)'}}></div>
                       </div>
@@ -422,14 +422,14 @@ function Bookings(){
             <tbody>
               {filtered.map((r,i)=>(
                 <tr key={i}>
-                  <td><span className="id">{r.plate}</span></td>
-                  <td><span className="pri">{r.contractor}</span><span className="sec">{r.phone}</span></td>
-                  <td style={{color:'var(--cream-3)',fontSize:12}}>{r.registered}</td>
-                  <td><b style={{color:'var(--cream)'}}>{r.routesDone}</b></td>
-                  <td style={{fontSize:12,color:'var(--cream-2)',maxWidth:220}}>{(r.projects||[]).join(', ')}</td>
-                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12}}>{r.rate} ₽</td>
-                  <td>{r.onLine ? <span style={{color:'var(--green)',fontWeight:600}}>● да</span> : <span style={{color:'var(--cream-3)'}}>—</span>}</td>
-                  <td>{pill(r.status)}</td>
+                  <td data-label="Госномер"><span className="id">{r.plate}</span></td>
+                  <td data-label="Контрагент"><span className="pri">{r.contractor}</span><span className="sec">{r.phone}</span></td>
+                  <td data-label="Регистрация" style={{color:'var(--cream-3)',fontSize:12}}>{r.registered}</td>
+                  <td data-label="Маршрутов"><b style={{color:'var(--cream)'}}>{r.routesDone}</b></td>
+                  <td data-label="Проекты" style={{fontSize:12,color:'var(--cream-2)',maxWidth:220}}>{(r.projects||[]).join(', ')}</td>
+                  <td data-label="Ставка" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12}}>{r.rate} ₽</td>
+                  <td data-label="На линии">{r.onLine ? <span style={{color:'var(--green)',fontWeight:600}}>● да</span> : <span style={{color:'var(--cream-3)'}}>—</span>}</td>
+                  <td data-label="Статус">{pill(r.status)}</td>
                 </tr>
               ))}
             </tbody>
@@ -561,7 +561,7 @@ function Fleet(){
             <button onClick={()=>setCollapsed(c=>!c)}>{collapsed?'▸ Показать':'▾ Свернуть'}</button>
           </div>
         </div>
-        {!collapsed && <div className="b flush" style={{overflowX:'auto'}}><table className="tbl">
+        {!collapsed && <div className="b flush"><table className="tbl">
           {view==='fleet' ? (
             <thead><tr>
               <SortTh k="plate" sort={sort}>Госномер</SortTh>
@@ -583,9 +583,9 @@ function Fleet(){
             </tr></thead>
           )}
           <tbody>{fleetRows.map(v=> view==='fleet' ? (
-            <tr key={v.plate}><td><span className="pri">{v.plate}</span></td><td>{v.brand}<span className="sec">{v.type}</span></td><td>{v.project}</td><td>{pill(v.status)}</td><td style={{color:v.ready?'var(--green)':'var(--cream-4)'}}>{v.ready?'исправна':'—'}</td><td><span className="id">{v.mileage.toLocaleString('ru-RU')}</span></td><td style={{color:'var(--cream-3)'}}>{v.atp}</td></tr>
+            <tr key={v.plate}><td data-label="Госномер"><span className="pri">{v.plate}</span></td><td data-label="Марка / тип">{v.brand}<span className="sec">{v.type}</span></td><td data-label="Проект">{v.project}</td><td data-label="Статус">{pill(v.status)}</td><td data-label="Готовность" style={{color:v.ready?'var(--green)':'var(--cream-4)'}}>{v.ready?'исправна':'—'}</td><td data-label="Пробег"><span className="id">{v.mileage.toLocaleString('ru-RU')}</span></td><td data-label="АТП" style={{color:'var(--cream-3)'}}>{v.atp}</td></tr>
           ) : (
-            <tr key={v.plate}><td><span className="pri">{v.plate}</span></td><td>{v.brand}<span className="sec">{v.type}</span></td><td>{docCell(v.dk)}</td><td>{docCell(v.osago)}</td><td>{docCell(v.sk)}</td><td>{pill(v.status)}</td></tr>
+            <tr key={v.plate}><td data-label="Госномер"><span className="pri">{v.plate}</span></td><td data-label="Марка / тип">{v.brand}<span className="sec">{v.type}</span></td><td data-label="Диагност. карта">{docCell(v.dk)}</td><td data-label="ОСАГО">{docCell(v.osago)}</td><td data-label="Пропуск СК">{docCell(v.sk)}</td><td data-label="Статус">{pill(v.status)}</td></tr>
           ))}</tbody>
         </table></div>}
         {collapsed && <div className="b" style={{color:'var(--cream-3)',fontSize:13}}>Список скрыт · {total} ТС. Нажмите «Показать».</div>}
@@ -680,13 +680,13 @@ function Conversations(){
             <tbody>
               {filtered.map((c,i)=>(
                 <tr key={i}>
-                  <td><span className="pri">{c.name}</span><span className="sec">{c.phone}</span></td>
-                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{c.project}</td>
-                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{c.position}</td>
-                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,color:'var(--cream-3)'}}>{c.applied}</td>
-                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,color:'var(--cream)'}}>{c.startDay}</td>
-                  <td style={{fontSize:12,color:'var(--cream-3)'}}>{c.source}</td>
-                  <td>{pill(c.status)}</td>
+                  <td data-label="ФИО"><span className="pri">{c.name}</span><span className="sec">{c.phone}</span></td>
+                  <td data-label="Проект" style={{fontSize:12,color:'var(--cream-2)'}}>{c.project}</td>
+                  <td data-label="Должность" style={{fontSize:12,color:'var(--cream-2)'}}>{c.position}</td>
+                  <td data-label="Заявка" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,color:'var(--cream-3)'}}>{c.applied}</td>
+                  <td data-label="Выход" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,color:'var(--cream)'}}>{c.startDay}</td>
+                  <td data-label="Источник" style={{fontSize:12,color:'var(--cream-3)'}}>{c.source}</td>
+                  <td data-label="Статус">{pill(c.status)}</td>
                 </tr>
               ))}
             </tbody>
@@ -753,20 +753,20 @@ function Customers(){
             <tbody>
               {storeRows.map((s,i)=>(
                 <tr key={i}>
-                  <td><span className="id">{s.id}</span></td>
-                  <td><span className="pri">{s.name}</span><span className="sec">{s.address}</span></td>
-                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
-                  <td>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <td data-label="ID"><span className="id">{s.id}</span></td>
+                  <td data-label="Магазин"><span className="pri">{s.name}</span><span className="sec">{s.address}</span></td>
+                  <td data-label="Проект" style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
+                  <td data-label="Маршр. сегодня">
+                    <div style={{display:'flex',alignItems:'center',gap:8,minWidth:90}}>
                       <b style={{color:'var(--cream)'}}>{s.routesToday}</b>
                       <div style={{flex:1,height:5,minWidth:40,borderRadius:4,background:'var(--line)',overflow:'hidden'}}><div style={{height:'100%',width:(s.routesToday/maxT*100)+'%',background:'var(--coral)'}}></div></div>
                     </div>
                   </td>
-                  <td style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12}}>{s.routesMonth}</td>
-                  <td>{s.ownCars}</td>
-                  <td>{s.hiredCars}</td>
-                  <td><span style={{color:s.onTime>=95?'var(--green)':'var(--warn)',fontWeight:600}}>{s.onTime}%</span></td>
-                  <td>{stpill(s.status)}</td>
+                  <td data-label="За месяц" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12}}>{s.routesMonth}</td>
+                  <td data-label="Свои ТС">{s.ownCars}</td>
+                  <td data-label="Частники">{s.hiredCars}</td>
+                  <td data-label="В срок"><span style={{color:s.onTime>=95?'var(--green)':'var(--warn)',fontWeight:600}}>{s.onTime}%</span></td>
+                  <td data-label="Статус">{stpill(s.status)}</td>
                 </tr>
               ))}
             </tbody>
@@ -856,17 +856,17 @@ function SyncPage(){
             <tbody>
               {(sort.sortKey?sort.apply(byStore,{}):byStore).map((s,i)=>(
                 <tr key={i} style={{cursor:'pointer'}} onClick={()=>setStore(s.store)}>
-                  <td><span className="pri">{s.store}</span></td>
-                  <td style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
-                  <td><b style={{color:'var(--cream)'}}>{s.closed}</b></td>
-                  <td style={{color:'var(--cream-3)'}}>{s.planned}</td>
-                  <td>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <td data-label="Магазин"><span className="pri">{s.store}</span></td>
+                  <td data-label="Проект" style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
+                  <td data-label="Закрыто"><b style={{color:'var(--cream)'}}>{s.closed}</b></td>
+                  <td data-label="План" style={{color:'var(--cream-3)'}}>{s.planned}</td>
+                  <td data-label="Выполнение">
+                    <div style={{display:'flex',alignItems:'center',gap:8,minWidth:90}}>
                       <span style={{color:s.compl>=90?'var(--green)':'var(--warn)',fontWeight:600,minWidth:34}}>{s.compl}%</span>
                       <div style={{flex:1,height:5,minWidth:40,borderRadius:4,background:'var(--line)',overflow:'hidden'}}><div style={{height:'100%',width:s.compl+'%',background:s.compl>=90?'var(--green)':'var(--warn)'}}></div></div>
                     </div>
                   </td>
-                  <td>{s.ot}%</td>
+                  <td data-label="В срок">{s.ot}%</td>
                 </tr>
               ))}
             </tbody>

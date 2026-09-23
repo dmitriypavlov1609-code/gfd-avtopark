@@ -306,9 +306,12 @@
   /* ===== МОБИЛЬНЫЙ (≤960px): один блок, ничего не скачет ===== */
   @media (max-width:960px){
     html,body,#root{height:auto;min-height:100vh;overflow-x:hidden;overflow-y:auto}
-    .app{grid-template-columns:1fr;height:auto;min-height:100vh;overflow:visible}
-    .main,.content{height:auto;overflow:visible;min-height:0}
-    .content{padding:14px}
+    .app{grid-template-columns:1fr;height:auto;min-height:100vh;overflow-x:hidden}
+    .main{height:auto;overflow:visible;min-height:0;min-width:0}
+    .content{height:auto;overflow-y:visible;overflow-x:clip;min-height:0;min-width:0;padding:14px}
+    /* не давать grid/flex-детям распирать ширину (grid blowout) */
+    .stats,.stat,.stat .l,.stat .v,.stat .d,.grid-2,.grid-3,.card,.card .b,.b.flush{min-width:0}
+    .stat .l{white-space:normal;overflow-wrap:anywhere}
     .topbar{padding:0 12px;gap:10px}
     .search{display:none}
     .hamb{display:inline-flex}
@@ -324,9 +327,7 @@
     .page-head h1{font-size:20px}
     .card .h{flex-wrap:wrap;gap:8px}
     .card .h .actions{flex-wrap:wrap}
-    /* таблицы — горизонтальный скролл внутри карточки */
-    .b.flush{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    .tbl{min-width:620px}
+    .b.flush{overflow-x:visible}
     /* ассистент */
     .asst-host{grid-template-columns:1fr;height:auto}
     .asst-side{height:auto;max-height:none;overflow:visible;padding-right:0}
@@ -337,6 +338,21 @@
   @media (max-width:480px){
     .stats{grid-template-columns:1fr}
     .page-head .actions{width:100%}
+  }
+
+  /* ===== таблицы → карточки на телефоне (без горизонтального скролла) ===== */
+  @media (max-width:760px){
+    .tbl{display:block;width:100%;min-width:0;font-size:13px}
+    .tbl thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+    .tbl tbody{display:block;width:100%}
+    .tbl tr{display:block;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:6px 14px;background:var(--bg-2)}
+    .tbl tr:hover td{background:transparent}
+    .tbl td{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 0;border:none;border-bottom:1px dashed var(--line);text-align:right;white-space:normal;max-width:none}
+    .tbl tr td:last-child{border-bottom:none}
+    .tbl td::before{content:attr(data-label);color:var(--cream-3);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;text-align:left;flex:0 0 42%;font-weight:500}
+    .tbl td .sec{display:inline;margin:0 0 0 6px;font-size:11.5px}
+    .tbl td.cellbar{display:none}          /* декоративные прогресс-бары прячем на телефоне */
+    .tbl td .pri{font-weight:600}
   }
 
   /* скрыть скроллбары, оставив скролл */

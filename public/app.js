@@ -728,13 +728,22 @@ function Dashboard({
     className: "tbl"
   }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Свои"), /*#__PURE__*/React.createElement("th", null, "Частники"), /*#__PURE__*/React.createElement("th", null, "Всего"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, byProject.map((r, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
-  }, r.project)), /*#__PURE__*/React.createElement("td", null, r.own), /*#__PURE__*/React.createElement("td", null, r.hired), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
+  }, r.project)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Свои"
+  }, r.own), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Частники"
+  }, r.hired), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Всего"
+  }, /*#__PURE__*/React.createElement("b", {
     style: {
       color: 'var(--cream)'
     }
   }, r.total)), /*#__PURE__*/React.createElement("td", {
+    className: "cellbar",
     style: {
       width: 120
     }
@@ -997,33 +1006,44 @@ function Bookings() {
     sort: sort
   }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((r, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Госномер"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "id"
-  }, r.plate)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, r.plate)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Контрагент"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
   }, r.contractor), /*#__PURE__*/React.createElement("span", {
     className: "sec"
   }, r.phone)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Регистрация",
     style: {
       color: 'var(--cream-3)',
       fontSize: 12
     }
-  }, r.registered), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
+  }, r.registered), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Маршрутов"
+  }, /*#__PURE__*/React.createElement("b", {
     style: {
       color: 'var(--cream)'
     }
   }, r.routesDone)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проекты",
     style: {
       fontSize: 12,
       color: 'var(--cream-2)',
       maxWidth: 220
     }
   }, (r.projects || []).join(', ')), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Ставка",
     style: {
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 12
     }
-  }, r.rate, " ₽"), /*#__PURE__*/React.createElement("td", null, r.onLine ? /*#__PURE__*/React.createElement("span", {
+  }, r.rate, " ₽"), /*#__PURE__*/React.createElement("td", {
+    "data-label": "На линии"
+  }, r.onLine ? /*#__PURE__*/React.createElement("span", {
     style: {
       color: 'var(--green)',
       fontWeight: 600
@@ -1032,7 +1052,9 @@ function Bookings() {
     style: {
       color: 'var(--cream-3)'
     }
-  }, "—")), /*#__PURE__*/React.createElement("td", null, pill(r.status)))))))));
+  }, "—")), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Статус"
+  }, pill(r.status)))))))));
 }
 
 /* ----------------- FLEET ----------------- */
@@ -1493,10 +1515,7 @@ function Fleet() {
   }, fleetRows.length, " / ", total), /*#__PURE__*/React.createElement("button", {
     onClick: () => setCollapsed(c => !c)
   }, collapsed ? '▸ Показать' : '▾ Свернуть'))), !collapsed && /*#__PURE__*/React.createElement("div", {
-    className: "b flush",
-    style: {
-      overflowX: 'auto'
-    }
+    className: "b flush"
   }, /*#__PURE__*/React.createElement("table", {
     className: "tbl"
   }, view === 'fleet' ? /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement(SortTh, {
@@ -1540,27 +1559,51 @@ function Fleet() {
     sort: sort
   }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, fleetRows.map(v => view === 'fleet' ? /*#__PURE__*/React.createElement("tr", {
     key: v.plate
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Госномер"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
-  }, v.plate)), /*#__PURE__*/React.createElement("td", null, v.brand, /*#__PURE__*/React.createElement("span", {
+  }, v.plate)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Марка / тип"
+  }, v.brand, /*#__PURE__*/React.createElement("span", {
     className: "sec"
-  }, v.type)), /*#__PURE__*/React.createElement("td", null, v.project), /*#__PURE__*/React.createElement("td", null, pill(v.status)), /*#__PURE__*/React.createElement("td", {
+  }, v.type)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект"
+  }, v.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Статус"
+  }, pill(v.status)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Готовность",
     style: {
       color: v.ready ? 'var(--green)' : 'var(--cream-4)'
     }
-  }, v.ready ? 'исправна' : '—'), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, v.ready ? 'исправна' : '—'), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Пробег"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "id"
   }, v.mileage.toLocaleString('ru-RU'))), /*#__PURE__*/React.createElement("td", {
+    "data-label": "АТП",
     style: {
       color: 'var(--cream-3)'
     }
   }, v.atp)) : /*#__PURE__*/React.createElement("tr", {
     key: v.plate
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Госномер"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
-  }, v.plate)), /*#__PURE__*/React.createElement("td", null, v.brand, /*#__PURE__*/React.createElement("span", {
+  }, v.plate)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Марка / тип"
+  }, v.brand, /*#__PURE__*/React.createElement("span", {
     className: "sec"
-  }, v.type)), /*#__PURE__*/React.createElement("td", null, docCell(v.dk)), /*#__PURE__*/React.createElement("td", null, docCell(v.osago)), /*#__PURE__*/React.createElement("td", null, docCell(v.sk)), /*#__PURE__*/React.createElement("td", null, pill(v.status))))))), collapsed && /*#__PURE__*/React.createElement("div", {
+  }, v.type)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Диагност. карта"
+  }, docCell(v.dk)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "ОСАГО"
+  }, docCell(v.osago)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Пропуск СК"
+  }, docCell(v.sk)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Статус"
+  }, pill(v.status))))))), collapsed && /*#__PURE__*/React.createElement("div", {
     className: "b",
     style: {
       color: 'var(--cream-3)',
@@ -1810,38 +1853,47 @@ function Conversations() {
     sort: sort
   }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, filtered.map((c, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "ФИО"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
   }, c.name), /*#__PURE__*/React.createElement("span", {
     className: "sec"
   }, c.phone)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект",
     style: {
       fontSize: 12,
       color: 'var(--cream-2)'
     }
   }, c.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Должность",
     style: {
       fontSize: 12,
       color: 'var(--cream-2)'
     }
   }, c.position), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Заявка",
     style: {
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 11.5,
       color: 'var(--cream-3)'
     }
   }, c.applied), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Выход",
     style: {
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 11.5,
       color: 'var(--cream)'
     }
   }, c.startDay), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Источник",
     style: {
       fontSize: 12,
       color: 'var(--cream-3)'
     }
-  }, c.source), /*#__PURE__*/React.createElement("td", null, pill(c.status)))))))));
+  }, c.source), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Статус"
+  }, pill(c.status)))))))));
 }
 
 /* ----------------- CUSTOMERS ----------------- */
@@ -1997,22 +2049,30 @@ function Customers() {
     sort: sort
   }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, storeRows.map((s, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "ID"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "id"
-  }, s.id)), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, s.id)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Магазин"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
   }, s.name), /*#__PURE__*/React.createElement("span", {
     className: "sec"
   }, s.address)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект",
     style: {
       fontSize: 12,
       color: 'var(--cream-2)'
     }
-  }, s.project), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+  }, s.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Маршр. сегодня"
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 8
+      gap: 8,
+      minWidth: 90
     }
   }, /*#__PURE__*/React.createElement("b", {
     style: {
@@ -2034,16 +2094,25 @@ function Customers() {
       background: 'var(--coral)'
     }
   })))), /*#__PURE__*/React.createElement("td", {
+    "data-label": "За месяц",
     style: {
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 12
     }
-  }, s.routesMonth), /*#__PURE__*/React.createElement("td", null, s.ownCars), /*#__PURE__*/React.createElement("td", null, s.hiredCars), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, s.routesMonth), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Свои ТС"
+  }, s.ownCars), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Частники"
+  }, s.hiredCars), /*#__PURE__*/React.createElement("td", {
+    "data-label": "В срок"
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       color: s.onTime >= 95 ? 'var(--green)' : 'var(--warn)',
       fontWeight: 600
     }
-  }, s.onTime, "%")), /*#__PURE__*/React.createElement("td", null, stpill(s.status)))))))));
+  }, s.onTime, "%")), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Статус"
+  }, stpill(s.status)))))))));
 }
 
 /* ----------------- СТАТИСТИКА (закрытые маршруты) ----------------- */
@@ -2266,26 +2335,35 @@ function SyncPage() {
       cursor: 'pointer'
     },
     onClick: () => setStore(s.store)
-  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Магазин"
+  }, /*#__PURE__*/React.createElement("span", {
     className: "pri"
   }, s.store)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект",
     style: {
       fontSize: 12,
       color: 'var(--cream-2)'
     }
-  }, s.project), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("b", {
+  }, s.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Закрыто"
+  }, /*#__PURE__*/React.createElement("b", {
     style: {
       color: 'var(--cream)'
     }
   }, s.closed)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "План",
     style: {
       color: 'var(--cream-3)'
     }
-  }, s.planned), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("div", {
+  }, s.planned), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Выполнение"
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
-      gap: 8
+      gap: 8,
+      minWidth: 90
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -2308,7 +2386,9 @@ function SyncPage() {
       width: s.compl + '%',
       background: s.compl >= 90 ? 'var(--green)' : 'var(--warn)'
     }
-  })))), /*#__PURE__*/React.createElement("td", null, s.ot, "%"))))))));
+  })))), /*#__PURE__*/React.createElement("td", {
+    "data-label": "В срок"
+  }, s.ot, "%"))))))));
 }
 
 /* ----------------- SETTINGS ----------------- */
