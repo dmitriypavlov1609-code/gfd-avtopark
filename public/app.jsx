@@ -87,9 +87,9 @@ const NAV_BOTTOM = [
   {id:'sett', label:'Настройки', ic:IC.cog, count:''},
 ];
 
-function Sidebar({page, setPage, mode}){
+function Sidebar({page, setPage, mode, open}){
   return (
-    <div className="side">
+    <div className={'side'+(open?' open':'')}>
       <div className="side-brand">
         <div className="logo">Г</div>
         <div className="name">ГФД<small>Автопарк · система учёта</small></div>
@@ -120,9 +120,10 @@ function Sidebar({page, setPage, mode}){
   );
 }
 
-function Topbar({crumb, mode, actions}){
+function Topbar({crumb, mode, actions, onMenu}){
   return (
     <div className="topbar">
+      <button className="hamb" onClick={onMenu} aria-label="Меню">☰</button>
       <div className="crumb">{crumb.map((c,i)=><Fragment key={i}>{i?<span style={{margin:'0 6px',color:'var(--cream-4)'}}>/</span>:null}{i===crumb.length-1?<b>{c}</b>:<span>{c}</span>}</Fragment>)}</div>
       <div className="search">{IC.search}<input placeholder="Поиск…" /><span className="key">⌘K</span></div>
       {actions}
@@ -1493,8 +1494,10 @@ function Reports(){
 }
 
 function App(){
-  const [page, setPage] = useState('dash');
+  const [page, setPageRaw] = useState('dash');
+  const [navOpen, setNavOpen] = useState(false);
   const [mode] = useState(true); // ключ Claude на сервере — агент всегда подключён
+  const setPage = (id) => { setPageRaw(id); setNavOpen(false); }; // переход закрывает мобильное меню
 
   const CRUMB = {
     dash: ['ГФД CRM', 'Главный дашборд'],
@@ -1511,9 +1514,10 @@ function App(){
 
   return (
     <div className="app">
-      <Sidebar page={page} setPage={setPage} mode={mode} />
+      <div className={'nav-overlay'+(navOpen?' open':'')} onClick={()=>setNavOpen(false)}></div>
+      <Sidebar page={page} setPage={setPage} mode={mode} open={navOpen} />
       <div className="main">
-        <Topbar crumb={CRUMB[page]} mode={mode} actions={ACTIONS[page]} />
+        <Topbar crumb={CRUMB[page]} mode={mode} actions={ACTIONS[page]} onMenu={()=>setNavOpen(o=>!o)} />
         <div className="content">
           {page === 'dash' && <Dashboard setPage={setPage}/>}
           {page === 'asst' && <AssistantChat/>}

@@ -268,23 +268,11 @@
   .asst-greeting p{font-size:13.5px;color:var(--cream-2);line-height:1.55}
   .asst-greeting p code{font-family:'JetBrains Mono',monospace;background:rgba(255,107,71,.15);color:var(--coral);padding:1px 5px;border-radius:3px;font-size:11.5px}
 
-  @media (max-width:960px){
-    .app{grid-template-columns:1fr}
-    .side{display:none}
-    .stats{grid-template-columns:1fr 1fr}
-    .grid-2,.grid-3{grid-template-columns:1fr}
-    .convo-host{grid-template-columns:1fr;height:auto}
-    .search{display:none}
-  }
-
-  /* tool labels — Russian-friendly */
+  /* ===== tool labels / list ===== */
   .tool-call .head .nm{flex-wrap:wrap;align-items:center;line-height:1.2}
   .tool-call .head .nm .en{font-style:normal;font-family:'JetBrains Mono',monospace;font-size:9.5px;opacity:.5;letter-spacing:.04em;text-transform:none;margin-left:8px;font-weight:400;display:inline-block}
   .tool-list .t{font-family:'Manrope',sans-serif;font-weight:500;text-transform:none;letter-spacing:.005em;font-size:12.5px;cursor:help}
   .tool-list .t::before{margin-right:0}
-
-
-  /* expandable tool descriptions */
   .tool-list details.t-detail{display:block;background:var(--bg-2);border-bottom:1px solid var(--line,rgba(128,128,128,.12))}
   .tool-list details.t-detail:last-child{border-bottom:none}
   .tool-list summary.t{cursor:pointer;list-style:none;transition:background .15s;padding-right:14px;user-select:none}
@@ -297,76 +285,63 @@
   .tool-list .t-desc{padding:2px 16px 14px 32px;font-family:'Manrope',sans-serif;font-size:11.5px;line-height:1.6;opacity:.78;font-weight:400;letter-spacing:0;text-transform:none;animation:fadeDesc .25s ease}
   @keyframes fadeDesc{from{opacity:0;transform:translateY(-3px)}to{opacity:.78;transform:none}}
 
+  /* гамбургер (по умолчанию скрыт, виден на мобиле) */
+  .hamb{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:9px;border:1px solid var(--line-2);background:var(--bg-4);color:var(--cream);cursor:pointer;flex-shrink:0;font-size:18px;line-height:1}
+  .nav-overlay{display:none}
 
-  /* mobile: разрешаем page-scroll, снимаем height-ограничения */
-  @media (max-width:960px){
-    html,body,#root{height:auto;overflow:visible}
-    .app{height:auto;min-height:100vh}
-    .main{overflow:visible}
-    .content{overflow:visible}
-    .asst-host{height:auto;min-height:auto}
-    .asst-side{max-height:none;min-height:auto;padding-right:0}
-    .asst-main{max-height:none;min-height:600px}
-    .asst-body{max-height:500px}
-  }
-
-
-  /* sidebar навигация — sticky чтобы не уезжала при page-scroll */
-
-
-  
-  /* видимый scrollbar для asst-side */
-    .asst-side::-webkit-scrollbar{width:8px}
-    .asst-side::-webkit-scrollbar-thumb{background:rgba(128,128,128,.4);border-radius:4px}
-    .asst-side::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,.65)}
-    .asst-side::-webkit-scrollbar-track{background:rgba(128,128,128,.05)}
-  }
-  @media (max-width:960px){
-    html,body,#root{height:auto !important;min-height:100vh !important;overflow-y:auto !important;overflow-x:hidden}
-    .app{height:auto !important;min-height:100vh !important;grid-template-columns:1fr !important;overflow:visible !important}
-    .main,.content{height:auto !important;overflow:visible !important;min-height:0}
-    .asst-host{height:auto !important;grid-template-columns:1fr !important}
-    .asst-side{height:auto !important;max-height:none !important;overflow:visible !important;padding-right:0}
-    .asst-main{min-height:580px !important;max-height:none !important;overflow:hidden}
-    .asst-body{max-height:480px !important;flex:1 !important;overflow-y:auto !important;min-height:0 !important}
-    .tool-list,.asst-suggest{max-height:none !important;overflow:visible !important}
-  }
-
-
-  /* === CANONICAL LAYOUT v2 — sidebar full-height + scroll inside cards === */
+  /* ===== ДЕСКТОП (≥961px): полноэкранный layout, скролл внутри карточек ===== */
   @media (min-width:961px){
-    html,body,#root{height:100% !important;overflow:hidden !important;min-height:0 !important}
-    .app{height:100vh !important;max-height:100vh !important;overflow:hidden}
-    .main{height:100vh !important;overflow:hidden !important;display:flex !important;flex-direction:column !important;min-height:0 !important}
-    .content{flex:1 1 0 !important;min-height:0 !important;overflow-y:auto !important;height:auto !important}
-    .asst-host{height:calc(100vh - 170px) !important;min-height:0 !important}
-    .asst-main{min-height:0 !important;max-height:100% !important;height:100% !important;overflow:hidden !important;display:flex !important;flex-direction:column !important}
-    .asst-side{min-height:0 !important;max-height:100% !important;height:100% !important;overflow-y:auto !important;display:flex !important;flex-direction:column !important;gap:14px;padding-right:4px}
-    .asst-body{flex:1 1 0 !important;min-height:0 !important;overflow-y:auto !important;max-height:none !important}
-    /* SCROLL inside each card — колёсико крутит внутри */
-    .tool-list{max-height:55vh !important;overflow-y:auto !important}
-    .asst-suggest{max-height:35vh !important;overflow-y:auto !important}
-    .tool-list::-webkit-scrollbar,.asst-suggest::-webkit-scrollbar,.asst-side::-webkit-scrollbar{width:6px}
-    .tool-list::-webkit-scrollbar-thumb,.asst-suggest::-webkit-scrollbar-thumb,.asst-side::-webkit-scrollbar-thumb{background:rgba(128,128,128,.4);border-radius:3px}
-    .tool-list::-webkit-scrollbar-thumb:hover,.asst-suggest::-webkit-scrollbar-thumb:hover,.asst-side::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,.65)}
-    .tool-list::-webkit-scrollbar-track,.asst-suggest::-webkit-scrollbar-track,.asst-side::-webkit-scrollbar-track{background:transparent}
+    html,body,#root{height:100%;overflow:hidden;min-height:0}
+    .app{height:100vh;max-height:100vh;overflow:hidden}
+    .main{height:100vh;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+    .content{flex:1 1 0;min-height:0;overflow-y:auto;height:auto}
+    .asst-host{height:calc(100vh - 170px);min-height:0}
+    .asst-main{min-height:0;max-height:100%;height:100%;overflow:hidden;display:flex;flex-direction:column}
+    .asst-side{min-height:0;max-height:100%;height:100%;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px}
+    .asst-body{flex:1 1 0;min-height:0;overflow-y:auto;max-height:none}
+    .tool-list{max-height:55vh;overflow-y:auto}
+    .asst-suggest{max-height:35vh;overflow-y:auto}
   }
+
+  /* ===== МОБИЛЬНЫЙ (≤960px): один блок, ничего не скачет ===== */
   @media (max-width:960px){
-    html,body,#root{height:auto !important;min-height:100vh !important;overflow-y:auto !important;overflow-x:hidden}
-    .app{height:auto !important;min-height:100vh !important;grid-template-columns:1fr !important;overflow:visible !important}
-    .main,.content{height:auto !important;overflow:visible !important;min-height:0}
-    .asst-host{height:auto !important;grid-template-columns:1fr !important}
-    .asst-side{height:auto !important;max-height:none !important;overflow:visible !important;padding-right:0}
-    .asst-main{min-height:580px !important;max-height:none !important;overflow:hidden}
-    .asst-body{max-height:480px !important;flex:1 !important;overflow-y:auto !important;min-height:0 !important}
-    .tool-list{max-height:60vh !important;overflow-y:auto !important}
-    .asst-suggest{max-height:50vh !important;overflow-y:auto !important}
+    html,body,#root{height:auto;min-height:100vh;overflow-x:hidden;overflow-y:auto}
+    .app{grid-template-columns:1fr;height:auto;min-height:100vh;overflow:visible}
+    .main,.content{height:auto;overflow:visible;min-height:0}
+    .content{padding:14px}
+    .topbar{padding:0 12px;gap:10px}
+    .search{display:none}
+    .hamb{display:inline-flex}
+    /* сайдбар → выезжающая панель */
+    .side{position:fixed;top:0;left:0;bottom:0;width:80%;max-width:300px;z-index:60;transform:translateX(-100%);transition:transform .25s ease;display:flex;overflow-y:auto}
+    .side.open{transform:translateX(0);box-shadow:0 0 60px rgba(0,0,0,.6)}
+    .nav-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55;opacity:0;pointer-events:none;transition:opacity .25s}
+    .nav-overlay.open{opacity:1;pointer-events:auto}
+    /* сетки в одну колонку */
+    .stats{grid-template-columns:1fr 1fr;gap:10px}
+    .grid-2,.grid-3{grid-template-columns:1fr}
+    .page-head{align-items:flex-start}
+    .page-head h1{font-size:20px}
+    .card .h{flex-wrap:wrap;gap:8px}
+    .card .h .actions{flex-wrap:wrap}
+    /* таблицы — горизонтальный скролл внутри карточки */
+    .b.flush{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .tbl{min-width:620px}
+    /* ассистент */
+    .asst-host{grid-template-columns:1fr;height:auto}
+    .asst-side{height:auto;max-height:none;overflow:visible;padding-right:0}
+    .asst-main{min-height:70vh}
+    .asst-body{max-height:60vh;overflow-y:auto}
+    .tool-list,.asst-suggest{max-height:none;overflow:visible}
+  }
+  @media (max-width:480px){
+    .stats{grid-template-columns:1fr}
+    .page-head .actions{width:100%}
   }
 
-
-  /* === HIDE SCROLLBARS but keep scroll === */
-  .tool-list,.asst-suggest{scrollbar-width:none !important;-ms-overflow-style:none !important}
-  .tool-list::-webkit-scrollbar,.asst-suggest::-webkit-scrollbar{display:none !important;width:0 !important;height:0 !important}
+  /* скрыть скроллбары, оставив скролл */
+  .tool-list,.asst-suggest{scrollbar-width:none;-ms-overflow-style:none}
+  .tool-list::-webkit-scrollbar,.asst-suggest::-webkit-scrollbar{display:none;width:0;height:0}
 
 </style>
 </head>

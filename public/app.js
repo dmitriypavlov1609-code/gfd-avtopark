@@ -283,10 +283,11 @@ const NAV_BOTTOM = [{
 function Sidebar({
   page,
   setPage,
-  mode
+  mode,
+  open
 }) {
   return /*#__PURE__*/React.createElement("div", {
-    className: "side"
+    className: 'side' + (open ? ' open' : '')
   }, /*#__PURE__*/React.createElement("div", {
     className: "side-brand"
   }, /*#__PURE__*/React.createElement("div", {
@@ -322,11 +323,16 @@ function Sidebar({
 function Topbar({
   crumb,
   mode,
-  actions
+  actions,
+  onMenu
 }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "topbar"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hamb",
+    onClick: onMenu,
+    "aria-label": "Меню"
+  }, "☰"), /*#__PURE__*/React.createElement("div", {
     className: "crumb"
   }, crumb.map((c, i) => /*#__PURE__*/React.createElement(Fragment, {
     key: i
@@ -3546,8 +3552,13 @@ function Reports() {
   }, "@gfd_otchet_bot"), ". Автоматическая рассылка по расписанию — следующим шагом (по схеме ОБЕ2)."))));
 }
 function App() {
-  const [page, setPage] = useState('dash');
+  const [page, setPageRaw] = useState('dash');
+  const [navOpen, setNavOpen] = useState(false);
   const [mode] = useState(true); // ключ Claude на сервере — агент всегда подключён
+  const setPage = id => {
+    setPageRaw(id);
+    setNavOpen(false);
+  }; // переход закрывает мобильное меню
 
   const CRUMB = {
     dash: ['ГФД CRM', 'Главный дашборд'],
@@ -3563,16 +3574,21 @@ function App() {
   const ACTIONS = {};
   return /*#__PURE__*/React.createElement("div", {
     className: "app"
-  }, /*#__PURE__*/React.createElement(Sidebar, {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: 'nav-overlay' + (navOpen ? ' open' : ''),
+    onClick: () => setNavOpen(false)
+  }), /*#__PURE__*/React.createElement(Sidebar, {
     page: page,
     setPage: setPage,
-    mode: mode
+    mode: mode,
+    open: navOpen
   }), /*#__PURE__*/React.createElement("div", {
     className: "main"
   }, /*#__PURE__*/React.createElement(Topbar, {
     crumb: CRUMB[page],
     mode: mode,
-    actions: ACTIONS[page]
+    actions: ACTIONS[page],
+    onMenu: () => setNavOpen(o => !o)
   }), /*#__PURE__*/React.createElement("div", {
     className: "content"
   }, page === 'dash' && /*#__PURE__*/React.createElement(Dashboard, {
