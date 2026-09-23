@@ -174,8 +174,9 @@ function AreaChart({series,color='var(--coral)',height=190,gid='g',unit=''}){
   return (<div style={{position:'relative'}} onMouseMove={onMove} onMouseLeave={()=>setHi(null)}>
     {hi!=null && series[hi] && (
       <div style={{position:'absolute',top:-2,left:`${Math.max(6,Math.min(94,hpct))}%`,transform:'translateX(-50%)',background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,padding:'4px 10px',fontSize:12,whiteSpace:'nowrap',zIndex:2,pointerEvents:'none',boxShadow:'0 6px 20px -6px rgba(0,0,0,.6)'}}>
+        <span style={{display:'inline-block',width:8,height:8,borderRadius:2,background:color,marginRight:6,verticalAlign:'middle'}}></span>
         <span style={{color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>{series[hi].label}</span>{' '}
-        <b style={{color}}>{series[hi].v}{unit}</b>
+        <b style={{color:'var(--cream)'}}>{series[hi].v}{unit}</b>
       </div>
     )}
     <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height,display:'block'}} preserveAspectRatio="none">
@@ -840,8 +841,21 @@ function Conversations(){
 function Customers(){
   const [rows,setRows]=useState([]);
   const [q,setQ]=useState('');
+  const [stats,setStats]=useState([]);
+  const [sel,setSel]=useState(null);   // выбранный магазин (провал)
+  const [day,setDay]=useState('2026-09-23');
   const sort=useSort();
-  useEffect(()=>{ fetch('/data/stores.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([])); },[]);
+  useEffect(()=>{
+    fetch('/data/stores.json?t='+Date.now()).then(r=>r.json()).then(setRows).catch(()=>setRows([]));
+    fetch('/data/stats.json?t='+Date.now()).then(r=>r.json()).then(d=>setStats(d.rows||[])).catch(()=>{});
+  },[]);
+  // детализация выбранного магазина
+  const selRows=sel?stats.filter(r=>r.store===sel.name).sort((a,b)=>a.date<b.date?-1:1):[];
+  const selClosed=selRows.reduce((a,r)=>a+r.closed,0), selPlanned=selRows.reduce((a,r)=>a+r.planned,0);
+  const selCompl=selPlanned?Math.round(selClosed/selPlanned*100):0;
+  const selOT=selRows.length?Math.round(selRows.reduce((a,r)=>a+r.onTime,0)/selRows.length):0;
+  const selSeries=selRows.map(r=>({label:r.date.slice(8,10)+'.'+r.date.slice(5,7),v:r.closed,date:r.date}));
+  const selDay=sel?selRows.find(r=>r.date===day):null;
   const total=rows.length;
   const active=rows.filter(s=>s.status==='active').length;
   const rToday=rows.reduce((a,s)=>a+(s.routesToday||0),0);
@@ -878,9 +892,31 @@ function Customers(){
         <div className="stat"><div className="l">► в срок · среднее</div><div className="v">{avgOT}%</div><div className="d"><span className="delta up">за месяц {rMonth.toLocaleString('ru-RU')}</span></div></div>
       </div>
 
+      {sel && (
+        <div className="card">
+          <div className="h">
+            <div className="t">{sel.name} · статистика по дням</div>
+            <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+              <input type="date" value={day} min="2026-08-25" max="2026-09-23" onChange={e=>setDay(e.target.value)} style={DINP}/>
+              <button onClick={()=>setSel(null)}>✕ закрыть</button>
+            </div>
+          </div>
+          <div className="b">
+            <div className="stats" style={{margin:'0 0 14px'}}>
+              <div className="stat"><div className="l">► закрыто (30 дн)</div><div className="v">{selClosed}</div><div className="d"><span className="lab">план {selPlanned}</span></div></div>
+              <div className="stat"><div className="l">► выполнение</div><div className="v">{selCompl}%</div><div className="d"><span className="lab">за месяц</span></div></div>
+              <div className="stat"><div className="l">► в срок · среднее</div><div className="v">{selOT}%</div><div className="d"><span className="lab">{sel.project}</span></div></div>
+              <div className="stat"><div className="l">► на {fmtRu(day)}</div><div className="v">{selDay?selDay.closed:'—'}</div><div className="d"><span className="lab">{selDay?('план '+selDay.planned+' · в срок '+selDay.onTime+'%'):'нет данных'}</span></div></div>
+            </div>
+            <div style={{fontSize:12,color:'var(--cream-3)',marginBottom:6}}>Закрытые маршруты по дням</div>
+            <AreaChart series={selSeries} color="var(--coral)" gid="storechart" height={200}/>
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <div className="h">
-          <div className="t">Список магазинов</div>
+          <div className="t">Список магазинов <span className="m" style={{fontWeight:400}}>· клик по строке → статистика магазина</span></div>
           <div className="actions" style={{display:'flex',gap:8,alignItems:'center'}}>
             <input value={q} onChange={e=>setQ(e.target.value)} placeholder="поиск: магазин / город / проект" style={{background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,color:'var(--cream)',padding:'6px 10px',fontSize:12,minWidth:200}}/>
             <span className="m">{storeRows.length} / {total}</span>
@@ -891,7 +927,7 @@ function Customers(){
             <thead><tr><SortTh k="id" sort={sort}>ID</SortTh><SortTh k="name" sort={sort}>Магазин</SortTh><SortTh k="project" sort={sort}>Проект</SortTh><SortTh k="routesToday" sort={sort}>Маршр. сегодня</SortTh><SortTh k="routesMonth" sort={sort}>За месяц</SortTh><SortTh k="ownCars" sort={sort}>Свои</SortTh><SortTh k="hiredCars" sort={sort}>Частники</SortTh><SortTh k="onTime" sort={sort}>В срок</SortTh><SortTh k="status" sort={sort}>Статус</SortTh></tr></thead>
             <tbody>
               {storeRows.map((s,i)=>(
-                <tr key={i}>
+                <tr key={i} style={{cursor:'pointer'}} onClick={()=>{setSel(s); if(typeof window!=='undefined') window.scrollTo({top:0,behavior:'smooth'});}}>
                   <td data-label="ID"><span className="id">{s.id}</span></td>
                   <td data-label="Магазин"><span className="pri">{s.name}</span><span className="sec">{s.address}</span></td>
                   <td data-label="Проект" style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
@@ -1030,7 +1066,7 @@ function SyncPage(){
             <thead><tr><SortTh k="store" sort={sort}>Магазин</SortTh><SortTh k="project" sort={sort}>Проект</SortTh><SortTh k="closed" sort={sort}>Закрыто</SortTh><SortTh k="planned" sort={sort}>План</SortTh><SortTh k="compl" sort={sort}>Выполнение</SortTh><SortTh k="ot" sort={sort}>В срок</SortTh></tr></thead>
             <tbody>
               {(sort.sortKey?sort.apply(byStore,{}):byStore).map((s,i)=>(
-                <tr key={i} style={{cursor:'pointer'}} onClick={()=>setStore(s.store)}>
+                <tr key={i} style={{cursor:'pointer'}} onClick={()=>{setStore(s.store); if(typeof window!=='undefined') window.scrollTo({top:0,behavior:'smooth'});}}>
                   <td data-label="Магазин"><span className="pri">{s.store}</span></td>
                   <td data-label="Проект" style={{fontSize:12,color:'var(--cream-2)'}}>{s.project}</td>
                   <td data-label="Закрыто"><b style={{color:'var(--cream)'}}>{s.closed}</b></td>

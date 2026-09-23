@@ -502,13 +502,23 @@ function AreaChart({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
+      display: 'inline-block',
+      width: 8,
+      height: 8,
+      borderRadius: 2,
+      background: color,
+      marginRight: 6,
+      verticalAlign: 'middle'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
       color: 'var(--cream-3)',
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 10.5
     }
   }, series[hi].label), ' ', /*#__PURE__*/React.createElement("b", {
     style: {
-      color
+      color: 'var(--cream)'
     }
   }, series[hi].v, unit)), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${W} ${H}`,
@@ -2256,10 +2266,26 @@ function Conversations() {
 function Customers() {
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState('');
+  const [stats, setStats] = useState([]);
+  const [sel, setSel] = useState(null); // выбранный магазин (провал)
+  const [day, setDay] = useState('2026-09-23');
   const sort = useSort();
   useEffect(() => {
     fetch('/data/stores.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
+    fetch('/data/stats.json?t=' + Date.now()).then(r => r.json()).then(d => setStats(d.rows || [])).catch(() => {});
   }, []);
+  // детализация выбранного магазина
+  const selRows = sel ? stats.filter(r => r.store === sel.name).sort((a, b) => a.date < b.date ? -1 : 1) : [];
+  const selClosed = selRows.reduce((a, r) => a + r.closed, 0),
+    selPlanned = selRows.reduce((a, r) => a + r.planned, 0);
+  const selCompl = selPlanned ? Math.round(selClosed / selPlanned * 100) : 0;
+  const selOT = selRows.length ? Math.round(selRows.reduce((a, r) => a + r.onTime, 0) / selRows.length) : 0;
+  const selSeries = selRows.map(r => ({
+    label: r.date.slice(8, 10) + '.' + r.date.slice(5, 7),
+    v: r.closed,
+    date: r.date
+  }));
+  const selDay = sel ? selRows.find(r => r.date === day) : null;
   const total = rows.length;
   const active = rows.filter(s => s.status === 'active').length;
   const rToday = rows.reduce((a, s) => a + (s.routesToday || 0), 0);
@@ -2344,13 +2370,99 @@ function Customers() {
     className: "d"
   }, /*#__PURE__*/React.createElement("span", {
     className: "delta up"
-  }, "за месяц ", rMonth.toLocaleString('ru-RU'))))), /*#__PURE__*/React.createElement("div", {
+  }, "за месяц ", rMonth.toLocaleString('ru-RU'))))), sel && /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
-  }, "Список магазинов"), /*#__PURE__*/React.createElement("div", {
+  }, sel.name, " · статистика по дням"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: day,
+    min: "2026-08-25",
+    max: "2026-09-23",
+    onChange: e => setDay(e.target.value),
+    style: DINP
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSel(null)
+  }, "✕ закрыть"))), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stats",
+    style: {
+      margin: '0 0 14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► закрыто (30 дн)"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, selClosed), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "план ", selPlanned))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► выполнение"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, selCompl, "%"), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "за месяц"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► в срок · среднее"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, selOT, "%"), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, sel.project))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► на ", fmtRu(day)), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, selDay ? selDay.closed : '—'), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, selDay ? 'план ' + selDay.planned + ' · в срок ' + selDay.onTime + '%' : 'нет данных')))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-3)',
+      marginBottom: 6
+    }
+  }, "Закрытые маршруты по дням"), /*#__PURE__*/React.createElement(AreaChart, {
+    series: selSeries,
+    color: "var(--coral)",
+    gid: "storechart",
+    height: 200
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Список магазинов ", /*#__PURE__*/React.createElement("span", {
+    className: "m",
+    style: {
+      fontWeight: 400
+    }
+  }, "· клик по строке → статистика магазина")), /*#__PURE__*/React.createElement("div", {
     className: "actions",
     style: {
       display: 'flex',
@@ -2404,7 +2516,17 @@ function Customers() {
     k: "status",
     sort: sort
   }, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, storeRows.map((s, i) => /*#__PURE__*/React.createElement("tr", {
-    key: i
+    key: i,
+    style: {
+      cursor: 'pointer'
+    },
+    onClick: () => {
+      setSel(s);
+      if (typeof window !== 'undefined') window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
   }, /*#__PURE__*/React.createElement("td", {
     "data-label": "ID"
   }, /*#__PURE__*/React.createElement("span", {
@@ -2761,7 +2883,13 @@ function SyncPage() {
     style: {
       cursor: 'pointer'
     },
-    onClick: () => setStore(s.store)
+    onClick: () => {
+      setStore(s.store);
+      if (typeof window !== 'undefined') window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
   }, /*#__PURE__*/React.createElement("td", {
     "data-label": "Магазин"
   }, /*#__PURE__*/React.createElement("span", {
