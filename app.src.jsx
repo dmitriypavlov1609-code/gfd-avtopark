@@ -173,10 +173,10 @@ function AreaChart({series,color='var(--coral)',height=190,gid='g',unit=''}){
   const hpct=hi!=null?(xp(hi)/W*100):0;
   return (<div style={{position:'relative'}} onMouseMove={onMove} onMouseLeave={()=>setHi(null)}>
     {hi!=null && series[hi] && (
-      <div style={{position:'absolute',top:-2,left:`${Math.max(6,Math.min(94,hpct))}%`,transform:'translateX(-50%)',background:'var(--panel-2)',border:'1px solid var(--line-2)',borderRadius:8,padding:'4px 10px',fontSize:12,whiteSpace:'nowrap',zIndex:2,pointerEvents:'none',boxShadow:'0 6px 20px -6px rgba(0,0,0,.6)'}}>
+      <div style={{position:'absolute',top:-2,left:`${Math.max(6,Math.min(94,hpct))}%`,transform:'translateX(-50%)',background:'#0B1F33',border:'1px solid '+color,borderRadius:8,padding:'5px 11px',fontSize:12,whiteSpace:'nowrap',zIndex:3,pointerEvents:'none',boxShadow:'0 8px 24px -6px rgba(0,0,0,.75)'}}>
         <span style={{display:'inline-block',width:8,height:8,borderRadius:2,background:color,marginRight:6,verticalAlign:'middle'}}></span>
-        <span style={{color:'var(--cream-3)',fontFamily:"'JetBrains Mono', monospace",fontSize:10.5}}>{series[hi].label}</span>{' '}
-        <b style={{color:'var(--cream)'}}>{series[hi].v}{unit}</b>
+        <span style={{color:'var(--cream-2)',fontFamily:"'JetBrains Mono', monospace",fontSize:11}}>{series[hi].label}</span>
+        <b style={{color:'var(--cream)',marginLeft:8}}>{series[hi].v}{unit}</b>
       </div>
     )}
     <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height,display:'block'}} preserveAspectRatio="none">
