@@ -466,7 +466,7 @@ function Fleet(){
   );
 
   // КТГ (коэффициент технической готовности) — динамика как в ОБЕ2
-  const ktgNow = ktg.length ? ktg[ktg.length-1].ktg : (total?Math.round((total-rem)/total*100):0);
+  const ktgNow = total ? Math.round((total-rem)/total*100) : 0; // КТГ = исправные (на линии + резерв) / всего
   const ktgAvg = a=>Math.round(a.reduce((s,x)=>s+x,0)/(a.length||1));
   const kSeries=(()=>{
     if(kper==='day') return ktg.slice(-30).map(d=>({label:d.date.slice(8,10)+'.'+d.date.slice(5,7), v:d.ktg}));
