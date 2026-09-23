@@ -957,6 +957,8 @@ function SyncPage(){
   const [rows,setRows]=useState([]);
   const [store,setStore]=useState('all');
   const [day,setDay]=useState('2026-09-23');
+  const [calMetric,setCalMetric]=useState('closed');
+  const [calMonth,setCalMonth]=useState('2026-09');
   const [ktg,setKtg]=useState([]);
   const [ownLog,setOwnLog]=useState({});
   const [hiredLog,setHiredLog]=useState({});
@@ -1008,12 +1010,25 @@ function SyncPage(){
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ГФД_статистика_маршрутов_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
   };
 
+  // ---- календарь помесячно (как КТГ в ОБЕ2) ----
+  const [cy,cm]=calMonth.split('-').map(Number);
+  const daysInMonth=new Date(cy,cm,0).getDate();
+  const startOffset=(new Date(cy,cm-1,1).getDay()+6)%7; // Пн=0
+  const calVal=date=>{ if(calMetric==='ktg'){const k=ktg.find(x=>x.date===date);return k?k.ktg:null;} const rs=scoped.filter(r=>r.date===date); return rs.length?rs.reduce((a,r)=>a+r.closed,0):null; };
+  const calCells=[]; for(let i=0;i<startOffset;i++) calCells.push(null);
+  for(let dd=1;dd<=daysInMonth;dd++){ const date=cy+'-'+String(cm).padStart(2,'0')+'-'+String(dd).padStart(2,'0'); calCells.push({dd,date,v:calVal(date)}); }
+  const calVals=calCells.filter(c=>c&&c.v!=null).map(c=>c.v);
+  const calMax=Math.max(1,...calVals), calMin=Math.min(...(calVals.length?calVals:[0]));
+  const calRGB=calMetric==='ktg'?'93,203,148':'255,107,71';
+  const calUnit=calMetric==='ktg'?'%':'';
+  const monthName=({8:'Август',9:'Сентябрь'})[cm]+' '+cy;
+
   return (
     <Fragment>
       <div className="page-head">
         <div>
           <h1>Статистика</h1>
-          <div className="sub">► финальная статистика · маршруты, КТГ, парк и кадры по любому дню</div>
+          <div className="sub">► календарь по дням · маршруты, КТГ, парк и кадры</div>
         </div>
         <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
           <input type="date" value={day} min="2026-08-25" max="2026-09-23" onChange={e=>setDay(e.target.value)} style={DINP}/>
@@ -1026,7 +1041,48 @@ function SyncPage(){
       </div>
 
       <div className="card">
-        <div className="h"><div className="t">Финальная статистика на {fmtRu(day)}</div><div className="m">итог по дню</div></div>
+        <div className="h">
+          <div className="t">Календарь · {monthName}</div>
+          <div className="actions" style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            <button className={calMetric==='closed'?'primary':''} onClick={()=>setCalMetric('closed')}>Маршруты</button>
+            <button className={calMetric==='ktg'?'primary':''} onClick={()=>setCalMetric('ktg')}>КТГ</button>
+            <span style={{width:1,height:20,background:'var(--line-2)'}}></span>
+            <button onClick={()=>setCalMonth('2026-08')} className={calMonth==='2026-08'?'primary':''}>Авг</button>
+            <button onClick={()=>setCalMonth('2026-09')} className={calMonth==='2026-09'?'primary':''}>Сен</button>
+          </div>
+        </div>
+        <div className="b">
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6}}>
+            {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((w,i)=>(<div key={'w'+i} style={{textAlign:'center',fontFamily:"'JetBrains Mono', monospace",fontSize:10,color:'var(--cream-3)',letterSpacing:'.08em',paddingBottom:2}}>{w}</div>))}
+            {calCells.map((c,i)=>{
+              if(!c) return <div key={i}></div>;
+              const has=c.v!=null;
+              const t=has?(calMax>calMin?(c.v-calMin)/(calMax-calMin):1):0;
+              const op=has?(0.15+t*0.75):0;
+              const isSel=c.date===day;
+              return (
+                <div key={i} onClick={()=>has&&setDay(c.date)}
+                  style={{cursor:has?'pointer':'default',borderRadius:9,padding:'8px 4px 7px',textAlign:'center',
+                    background:has?`rgba(${calRGB},${op})`:'var(--bg-4)',
+                    border:isSel?'2px solid var(--coral)':'1px solid '+(has?'transparent':'var(--line)'),
+                    opacity:has?1:0.5,minHeight:52,display:'flex',flexDirection:'column',justifyContent:'center',gap:2,transition:'transform .1s'}}>
+                  <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,color:'var(--cream-3)'}}>{c.dd}</div>
+                  <div style={{fontFamily:"'Manrope', sans-serif",fontWeight:700,fontSize:15,color:has?'var(--cream)':'var(--cream-4)'}}>{has?c.v+calUnit:'·'}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{marginTop:12,display:'flex',alignItems:'center',gap:10,fontSize:11,color:'var(--cream-3)',flexWrap:'wrap'}}>
+            <span>{calMetric==='ktg'?'КТГ парка, %':'закрыто маршрутов'}{store!=='all'?' · '+store:''}</span>
+            <span style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:6}}>меньше
+              <span style={{display:'inline-flex',gap:3}}>{[0.2,0.45,0.7,0.95].map((o,i)=>(<span key={i} style={{width:16,height:12,borderRadius:3,background:`rgba(${calRGB},${o})`}}></span>))}</span>
+            больше</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="h"><div className="t">Финальная статистика на {fmtRu(day)}</div><div className="m">клик по дню в календаре</div></div>
         <div className="b">
           <div className="stats" style={{margin:0}}>
             <div className="stat"><div className="l">► маршрутов закрыто</div><div className="v">{dayClosed}</div><div className="d"><span className="lab">план {dayPlanned}</span></div></div>
