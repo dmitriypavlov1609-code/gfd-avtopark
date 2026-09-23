@@ -408,6 +408,145 @@ function SortTh({
   }, active ? sort.dir === 'asc' ? '▲' : '▼' : '⇅'));
 }
 
+/* ----------------- общие: график/период/дата ----------------- */
+function aggSeries(daily, get, period, mode) {
+  mode = mode || 'sum';
+  const agg = a => mode === 'sum' ? a.reduce((s, x) => s + x, 0) : Math.round(a.reduce((s, x) => s + x, 0) / (a.length || 1));
+  if (period === 'day') return daily.slice(-30).map(d => ({
+    label: d.date.slice(8, 10) + '.' + d.date.slice(5, 7),
+    v: get(d),
+    date: d.date
+  }));
+  if (period === 'week') {
+    const wk = {};
+    daily.forEach(d => {
+      const dt = new Date(d.date);
+      const mon = new Date(dt);
+      mon.setDate(dt.getDate() - (dt.getDay() + 6) % 7);
+      const k = mon.toISOString().slice(0, 10);
+      (wk[k] = wk[k] || []).push(get(d));
+    });
+    return Object.entries(wk).slice(-12).map(([k, a]) => ({
+      label: k.slice(8, 10) + '.' + k.slice(5, 7),
+      v: agg(a)
+    }));
+  }
+  const mo = {};
+  const NM = ['', 'янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  daily.forEach(d => {
+    const k = d.date.slice(0, 7);
+    (mo[k] = mo[k] || []).push(get(d));
+  });
+  return Object.entries(mo).slice(-6).map(([k, a]) => ({
+    label: NM[+k.slice(5, 7)],
+    v: agg(a)
+  }));
+}
+function AreaChart({
+  series,
+  color = 'var(--coral)',
+  height = 190,
+  gid = 'g'
+}) {
+  const W = 680,
+    H = height,
+    P = 10,
+    n = series.length;
+  const max = Math.max(1, ...series.map(s => s.v)),
+    min = Math.min(0, ...series.map(s => s.v));
+  const xp = i => n > 1 ? P + i * (W - 2 * P) / (n - 1) : W / 2,
+    yp = v => H - P - (v - min) / (max - min || 1) * (H - 2 * P);
+  const line = series.map((s, i) => (i ? 'L' : 'M') + xp(i).toFixed(1) + ' ' + yp(s.v).toFixed(1)).join(' ');
+  const area = n ? line + ` L ${xp(n - 1).toFixed(1)} ${H - P} L ${xp(0).toFixed(1)} ${H - P} Z` : '';
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    style: {
+      width: '100%',
+      height,
+      display: 'block'
+    },
+    preserveAspectRatio: "none"
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: gid,
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: color,
+    stopOpacity: "0.32"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: color,
+    stopOpacity: "0"
+  }))), [0.25, 0.5, 0.75].map((g, i) => /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: P,
+    x2: W - P,
+    y1: P + g * (H - 2 * P),
+    y2: P + g * (H - 2 * P),
+    stroke: "var(--line)",
+    strokeWidth: "1"
+  })), area && /*#__PURE__*/React.createElement("path", {
+    d: area,
+    fill: `url(#${gid})`
+  }), line && /*#__PURE__*/React.createElement("path", {
+    d: line,
+    fill: "none",
+    stroke: color,
+    strokeWidth: "2.5",
+    strokeLinejoin: "round"
+  }), n > 0 && /*#__PURE__*/React.createElement("circle", {
+    cx: xp(n - 1),
+    cy: yp(series[n - 1].v),
+    r: "4",
+    fill: color
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "util-legend",
+    style: {
+      marginTop: 6,
+      justifyContent: 'space-between',
+      color: 'var(--cream-3)',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 10.5
+    }
+  }, series.filter((_, i) => n <= 12 || i % Math.ceil(n / 12) === 0).map((s, i) => /*#__PURE__*/React.createElement("span", {
+    key: i
+  }, s.label))));
+}
+function PBtns({
+  period,
+  set
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap'
+    }
+  }, ['day', 'week', 'month'].map(p => /*#__PURE__*/React.createElement("button", {
+    key: p,
+    className: period === p ? 'primary' : '',
+    onClick: () => set(p)
+  }, {
+    day: 'день',
+    week: 'неделя',
+    month: 'месяц'
+  }[p])));
+}
+const DINP = {
+  background: 'var(--panel-2)',
+  border: '1px solid var(--line-2)',
+  borderRadius: 8,
+  color: 'var(--cream)',
+  padding: '5px 8px',
+  fontSize: 12,
+  colorScheme: 'dark'
+};
+const fmtRu = s => s ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4) : '';
+
 /* ----------------- DASHBOARD ----------------- */
 function Dashboard({
   setPage
@@ -834,10 +973,14 @@ function Bookings() {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
+  const [log, setLog] = useState({});
+  const [day, setDay] = useState('2026-09-23');
   const sort = useSort();
   useEffect(() => {
     fetch('/data/hired-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
+    fetch('/data/hired-log.json?t=' + Date.now()).then(r => r.json()).then(setLog).catch(() => {});
   }, []);
+  const dayList = log[day] || [];
   const SL = {
     active: 'Активен',
     soon: 'Истекает',
@@ -955,6 +1098,62 @@ function Bookings() {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
+  }, "Кто работал по дням"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: day,
+    min: "2026-08-25",
+    max: "2026-09-23",
+    onChange: e => setDay(e.target.value),
+    style: DINP
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "m"
+  }, dayList.length, " на линии"))), /*#__PURE__*/React.createElement("div", {
+    className: "b flush"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "tbl"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Госномер"), /*#__PURE__*/React.createElement("th", null, "Контрагент"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Маршрут"))), /*#__PURE__*/React.createElement("tbody", null, dayList.length ? dayList.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Госномер"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "id"
+  }, r.plate)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Контрагент"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pri"
+  }, r.contractor)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект",
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-2)'
+    }
+  }, r.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Маршрут",
+    style: {
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 12,
+      color: 'var(--coral)'
+    }
+  }, r.route))) : /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: 4,
+    style: {
+      color: 'var(--cream-3)',
+      textAlign: 'center',
+      padding: 16
+    }
+  }, "Нет данных на ", fmtRu(day))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
   }, "Реестр частников"), /*#__PURE__*/React.createElement("div", {
     className: "actions",
     style: {
@@ -1065,11 +1264,16 @@ function Fleet() {
   const [kper, setKper] = useState('day');
   const [collapsed, setCollapsed] = useState(false);
   const [view, setView] = useState('fleet'); // fleet | docs
+  const [log, setLog] = useState({});
+  const [day, setDay] = useState('2026-09-23');
   const sort = useSort();
   useEffect(() => {
     fetch('/data/own-fleet.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
     fetch('/data/own-ktg.json?t=' + Date.now()).then(r => r.json()).then(d => setKtg(d.daily || [])).catch(() => {});
+    fetch('/data/own-log.json?t=' + Date.now()).then(r => r.json()).then(setLog).catch(() => {});
   }, []);
+  const dayList = log[day] || [];
+  const dayKtg = (ktg.find(x => x.date === day) || {}).ktg;
   const SC = {
     'На линии': '#5DCB94',
     'Ремонт': '#FFB84A',
@@ -1476,6 +1680,70 @@ function Fleet() {
     className: "h"
   }, /*#__PURE__*/React.createElement("div", {
     className: "t"
+  }, "Кто работал по дням"), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: day,
+    min: "2026-08-25",
+    max: "2026-09-23",
+    onChange: e => setDay(e.target.value),
+    style: DINP
+  }), dayKtg != null && /*#__PURE__*/React.createElement("span", {
+    className: "m",
+    style: {
+      color: dayKtg >= 75 ? 'var(--green)' : 'var(--warn)'
+    }
+  }, "КТГ ", dayKtg, "%"), /*#__PURE__*/React.createElement("span", {
+    className: "m"
+  }, dayList.length, " на линии"))), /*#__PURE__*/React.createElement("div", {
+    className: "b flush"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "tbl"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Водитель"), /*#__PURE__*/React.createElement("th", null, "Госномер"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Маршрут"))), /*#__PURE__*/React.createElement("tbody", null, dayList.length ? dayList.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "Водитель"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pri"
+  }, r.driver)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Госномер"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "id"
+  }, r.plate)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект",
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-2)'
+    }
+  }, r.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Маршрут",
+    style: {
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 12,
+      color: 'var(--coral)'
+    }
+  }, r.route))) : /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: 4,
+    style: {
+      color: 'var(--cream-3)',
+      textAlign: 'center',
+      padding: 16
+    }
+  }, "Нет данных на ", fmtRu(day))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: '16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
   }, "Список ТС ", view === 'docs' && (dkExp || osExp) ? /*#__PURE__*/React.createElement("span", {
     style: {
       color: '#FF6464',
@@ -1615,12 +1883,17 @@ function Fleet() {
 /* ----------------- КАДРЫ (кандидаты) ----------------- */
 function Conversations() {
   const [rows, setRows] = useState([]);
+  const [log, setLog] = useState([]);
   const [fs, setFs] = useState('all');
   const [fp, setFp] = useState('all');
   const [q, setQ] = useState('');
+  const [metric, setMetric] = useState('applications');
+  const [period, setPeriod] = useState('day');
+  const [picked, setPicked] = useState('');
   const sort = useSort();
   useEffect(() => {
     fetch('/data/candidates.json?t=' + Date.now()).then(r => r.json()).then(setRows).catch(() => setRows([]));
+    fetch('/data/kadry-log.json?t=' + Date.now()).then(r => r.json()).then(d => setLog(d.daily || [])).catch(() => {});
   }, []);
   const SC = {
     'новый': '#4A8FA8',
@@ -1646,15 +1919,33 @@ function Conversations() {
   const total = rows.length;
   const lemana = rows.filter(c => c.project === 'Лемана Про').length;
   const hired = rows.filter(c => c.status === 'принят').length;
-  const inWork = rows.filter(c => c.status === 'собеседование' || c.status === 'оформление').length;
   const projects = [...new Set(rows.map(c => c.project))];
+  const MET = {
+    applications: {
+      label: 'Заявки',
+      color: 'var(--sea)'
+    },
+    interviews: {
+      label: 'Собеседования',
+      color: 'var(--warn)'
+    },
+    hires: {
+      label: 'Приёмы',
+      color: 'var(--green)'
+    }
+  };
+  const sum30 = k => log.slice(-30).reduce((s, d) => s + (d[k] || 0), 0);
+  const series = aggSeries(log, d => d[metric] || 0, period, 'sum');
+  const pickedRow = picked ? log.find(d => d.date === picked) : null;
+  const dmin = log.length ? log[0].date : '';
+  const dmax = log.length ? log[log.length - 1].date : '';
+  const pRu = fmtRu(picked);
+  const dayCands = picked ? rows.filter(c => c.applied === pRu || c.startDay === pRu) : [];
   const filtered = sort.apply(rows.filter(c => (fs === 'all' || c.status === fs) && (fp === 'all' || c.project === fp) && (!q || [c.name, c.project, c.position, c.source, c.phone].join(' ').toLowerCase().includes(q.toLowerCase()))), {
     name: c => c.name,
     startDay: c => c.startDay.split('.').reverse().join(''),
     applied: c => c.applied.split('.').reverse().join('')
   });
-
-  // по дням выхода
   const dmap = {};
   rows.forEach(c => {
     if (c.status !== 'отказ') dmap[c.startDay] = (dmap[c.startDay] || 0) + 1;
@@ -1688,24 +1979,31 @@ function Conversations() {
     className: "page-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Кадры"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► кандидаты на проекты · выход по дням")), /*#__PURE__*/React.createElement("div", {
+  }, "► кандидаты и статистика найма · день / неделя / месяц")), /*#__PURE__*/React.createElement("div", {
     className: "actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
     onClick: download
   }, "↓ Скачать отчёт"))), /*#__PURE__*/React.createElement("div", {
     className: "stats"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "stat"
+  }, [['applications', 'заявки (30 дн)'], ['interviews', 'собеседования (30 дн)'], ['hires', 'приёмы (30 дн)']].map(([k, l]) => /*#__PURE__*/React.createElement("div", {
+    key: k,
+    className: "stat",
+    onClick: () => setMetric(k),
+    style: {
+      cursor: 'pointer',
+      outline: metric === k ? '1.5px solid var(--coral)' : '1.5px solid transparent',
+      outlineOffset: -1
+    }
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
-  }, "► всего кандидатов"), /*#__PURE__*/React.createElement("div", {
+  }, "► ", l, " ", metric === k ? '▾' : ''), /*#__PURE__*/React.createElement("div", {
     className: "v"
-  }, total), /*#__PURE__*/React.createElement("div", {
+  }, sum30(k)), /*#__PURE__*/React.createElement("div", {
     className: "d"
   }, /*#__PURE__*/React.createElement("span", {
     className: "lab"
-  }, "в воронке"))), /*#__PURE__*/React.createElement("div", {
+  }, "клик → график")))), /*#__PURE__*/React.createElement("div", {
     className: "stat"
   }, /*#__PURE__*/React.createElement("div", {
     className: "l"
@@ -1717,27 +2015,116 @@ function Conversations() {
     className: "delta up"
   }, total ? Math.round(lemana / total * 100) : 0, "%"), /*#__PURE__*/React.createElement("span", {
     className: "lab"
-  }, "от всех"))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
+  }, "принято ", hired)))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "l"
-  }, "► принято"), /*#__PURE__*/React.createElement("div", {
-    className: "v"
-  }, hired), /*#__PURE__*/React.createElement("div", {
-    className: "d"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "оформлены"))), /*#__PURE__*/React.createElement("div", {
-    className: "stat"
+    className: "h"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "l"
-  }, "► в работе"), /*#__PURE__*/React.createElement("div", {
-    className: "v"
-  }, inWork), /*#__PURE__*/React.createElement("div", {
-    className: "d"
+    className: "t"
+  }, "Динамика найма · ", MET[metric].label), /*#__PURE__*/React.createElement("div", {
+    className: "actions",
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement(PBtns, {
+    period: period,
+    set: setPeriod
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: picked,
+    min: dmin,
+    max: dmax,
+    onChange: e => setPicked(e.target.value),
+    style: DINP
+  }), picked && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPicked('')
+  }, "сброс"))), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, pickedRow && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12,
+      padding: '10px 14px',
+      borderRadius: 10,
+      background: 'var(--panel-2)',
+      border: '1px solid var(--line-2)',
+      display: 'flex',
+      gap: 20,
+      flexWrap: 'wrap',
+      fontSize: 13
+    }
   }, /*#__PURE__*/React.createElement("span", {
-    className: "lab"
-  }, "собеседование / оформление")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: 'var(--cream-2)'
+    }
+  }, "На ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: 'var(--cream)'
+    }
+  }, fmtRu(picked)), ":"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--sea)'
+    }
+  }, "заявки ", pickedRow.applications), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--warn)'
+    }
+  }, "собеседования ", pickedRow.interviews), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--green)'
+    }
+  }, "приёмы ", pickedRow.hires)), /*#__PURE__*/React.createElement(AreaChart, {
+    series: series,
+    color: MET[metric].color,
+    gid: "kad"
+  }))), picked && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Кандидаты на ", fmtRu(picked)), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, dayCands.length, " чел · заявка/выход")), /*#__PURE__*/React.createElement("div", {
+    className: "b flush"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "tbl"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "ФИО"), /*#__PURE__*/React.createElement("th", null, "Проект"), /*#__PURE__*/React.createElement("th", null, "Должность"), /*#__PURE__*/React.createElement("th", null, "Событие"), /*#__PURE__*/React.createElement("th", null, "Статус"))), /*#__PURE__*/React.createElement("tbody", null, dayCands.length ? dayCands.map((c, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    "data-label": "ФИО"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "pri"
+  }, c.name)), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Проект",
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-2)'
+    }
+  }, c.project), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Должность",
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-2)'
+    }
+  }, c.position), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Событие",
+    style: {
+      fontSize: 12,
+      color: 'var(--cream-3)'
+    }
+  }, c.applied === pRu ? 'заявка' : '', c.applied === pRu && c.startDay === pRu ? ' · ' : '', c.startDay === pRu ? 'выход' : ''), /*#__PURE__*/React.createElement("td", {
+    "data-label": "Статус"
+  }, pill(c.status)))) : /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: 5,
+    style: {
+      color: 'var(--cream-3)',
+      textAlign: 'center',
+      padding: 16
+    }
+  }, "Нет событий на эту дату")))))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
@@ -2119,10 +2506,29 @@ function Customers() {
 function SyncPage() {
   const [rows, setRows] = useState([]);
   const [store, setStore] = useState('all');
+  const [day, setDay] = useState('2026-09-23');
+  const [ktg, setKtg] = useState([]);
+  const [ownLog, setOwnLog] = useState({});
+  const [hiredLog, setHiredLog] = useState({});
+  const [kad, setKad] = useState([]);
   const sort = useSort();
   useEffect(() => {
     fetch('/data/stats.json?t=' + Date.now()).then(r => r.json()).then(d => setRows(d.rows || [])).catch(() => setRows([]));
+    fetch('/data/own-ktg.json?t=' + Date.now()).then(r => r.json()).then(d => setKtg(d.daily || [])).catch(() => {});
+    fetch('/data/own-log.json?t=' + Date.now()).then(r => r.json()).then(setOwnLog).catch(() => {});
+    fetch('/data/hired-log.json?t=' + Date.now()).then(r => r.json()).then(setHiredLog).catch(() => {});
+    fetch('/data/kadry-log.json?t=' + Date.now()).then(r => r.json()).then(d => setKad(d.daily || [])).catch(() => {});
   }, []);
+
+  // финальная статистика на выбранный день
+  const dayStoreRows = rows.filter(r => r.date === day);
+  const dayClosed = dayStoreRows.reduce((a, r) => a + r.closed, 0);
+  const dayPlanned = dayStoreRows.reduce((a, r) => a + r.planned, 0);
+  const dayKtg = (ktg.find(x => x.date === day) || {}).ktg;
+  const dayOwn = (ownLog[day] || []).length;
+  const dayHired = (hiredLog[day] || []).length;
+  const dayHires = (kad.find(x => x.date === day) || {}).hires;
+  const storeDay = store !== 'all' ? dayStoreRows.find(r => r.store === store) : null;
   const stores = [...new Set(rows.map(r => r.store))];
   const scoped = store === 'all' ? rows : rows.filter(r => r.store === store);
   const closed = scoped.reduce((a, r) => a + r.closed, 0);
@@ -2177,14 +2583,22 @@ function SyncPage() {
     className: "page-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Статистика"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► закрытые маршруты по магазинам · последние 30 дней")), /*#__PURE__*/React.createElement("div", {
+  }, "► финальная статистика · маршруты, КТГ, парк и кадры по любому дню")), /*#__PURE__*/React.createElement("div", {
     className: "actions",
     style: {
       display: 'flex',
       gap: 8,
-      alignItems: 'center'
+      alignItems: 'center',
+      flexWrap: 'wrap'
     }
-  }, /*#__PURE__*/React.createElement("select", {
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: day,
+    min: "2026-08-25",
+    max: "2026-09-23",
+    onChange: e => setDay(e.target.value),
+    style: DINP
+  }), /*#__PURE__*/React.createElement("select", {
     value: store,
     onChange: e => setStore(e.target.value),
     style: {
@@ -2204,6 +2618,89 @@ function SyncPage() {
     className: "primary",
     onClick: download
   }, "↓ Скачать отчёт"))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Финальная статистика на ", fmtRu(day)), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, "итог по дню")), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stats",
+    style: {
+      margin: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► маршрутов закрыто"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, dayClosed), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "план ", dayPlanned))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► КТГ парка"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, dayKtg != null ? dayKtg + '%' : '—'), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "тех. готовность"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► свои на линии"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, dayOwn), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "водителей"))), /*#__PURE__*/React.createElement("div", {
+    className: "stat"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "l"
+  }, "► частники на линии"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, dayHired), /*#__PURE__*/React.createElement("div", {
+    className: "d"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "lab"
+  }, "+ приёмы ", dayHires != null ? dayHires : 0)))), storeDay && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      paddingTop: 14,
+      borderTop: '1px solid var(--line)',
+      display: 'flex',
+      gap: 22,
+      flexWrap: 'wrap',
+      fontSize: 13
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream-2)'
+    }
+  }, store, " на ", fmtRu(day), ":"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--cream)'
+    }
+  }, "закрыто ", /*#__PURE__*/React.createElement("b", null, storeDay.closed), " / план ", storeDay.planned), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: storeDay.onTime >= 90 ? 'var(--green)' : 'var(--warn)'
+    }
+  }, "в срок ", storeDay.onTime, "%")), store !== 'all' && !storeDay && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      color: 'var(--cream-3)',
+      fontSize: 13
+    }
+  }, "Нет данных по «", store, "» на ", fmtRu(day)))), /*#__PURE__*/React.createElement("div", {
     className: "stats"
   }, /*#__PURE__*/React.createElement("div", {
     className: "stat"
@@ -2527,12 +3024,7 @@ function Settings() {
       fontSize: 12,
       color: schedStatus[0] === '✓' ? 'var(--green)' : schedStatus === '…' ? 'var(--cream-3)' : 'var(--warn)'
     }
-  }, schedStatus)), /*#__PURE__*/React.createElement("div", {
-    className: "help",
-    style: {
-      marginTop: 10
-    }
-  }, "Сервер проверяет расписание ежеминутно (VPS cron): в указанное время бот присылает сводный отчёт. Работает реально."))), /*#__PURE__*/React.createElement("div", {
+  }, schedStatus)))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
@@ -3460,51 +3952,84 @@ function AssistantChat() {
 /* ============================================================ */
 function Reports() {
   const REP = [{
+    key: 'ktg',
+    t: 'КТГ собственного парка',
+    d: 'коэф. тех. готовности · сегодня / вчера / среднее / за период'
+  }, {
     key: 'own',
     t: 'Собственный автопарк',
-    d: 'ТС · статусы, проекты, пробег, АТП',
-    f: '/data/own-fleet.csv',
-    n: 'ГФД_собственный_парк'
+    d: 'ТС · статусы, проекты, пробег, АТП'
   }, {
     key: 'hired',
     t: 'Привлечённый парк',
-    d: 'частники · регистрация, маршруты, проекты',
-    f: '/data/hired-fleet.csv',
-    n: 'ГФД_привлечённый_парк'
+    d: 'частники · регистрация, маршруты, проекты'
   }, {
     key: 'stores',
     t: 'Магазины',
-    d: 'точки · маршруты, транспорт, «в срок %»',
-    f: '/data/stores.csv',
-    n: 'ГФД_магазины'
+    d: 'точки · маршруты, транспорт, «в срок %»'
   }, {
     key: 'candidates',
     t: 'Кадры',
-    d: 'кандидаты · проекты, даты выхода, статусы',
-    f: '/data/candidates.csv',
-    n: 'ГФД_кадры'
+    d: 'кандидаты · проекты, даты выхода, статусы'
   }, {
     key: 'stats',
     t: 'Статистика маршрутов',
-    d: 'закрытые маршруты по магазинам · план · 30 дней',
-    f: null,
-    n: 'ГФД_статистика_маршрутов'
+    d: 'закрытые маршруты по магазинам · план'
   }, {
     key: 'summary',
     t: 'Сводный отчёт',
-    d: 'ключевые показатели автопарка на сегодня',
-    f: null,
-    n: 'ГФД_сводный'
+    d: 'ключевые показатели автопарка'
   }];
   const [status, setStatus] = useState({});
+  const [mode, setMode] = useState('today');
+  const [date, setDate] = useState('2026-09-23');
+  const [from, setFrom] = useState('2026-08-25');
+  const [to, setTo] = useState('2026-09-23');
+  const opts = () => ({
+    mode,
+    date,
+    from,
+    to
+  });
+  const periodLabel = () => ({
+    today: 'сегодня',
+    yesterday: 'вчера',
+    monthavg: 'среднее за 30 дней',
+    date: fmtRu(date),
+    range: fmtRu(from) + '–' + fmtRu(to)
+  })[mode];
+  const dlKtg = async () => {
+    const d = (await (await fetch('/data/own-ktg.json?t=' + Date.now())).json()).daily || [];
+    const head = ['Дата', 'КТГ %', 'Исправны', 'Всего', 'В ремонте'];
+    let sel = [];
+    if (mode === 'today') sel = d.slice(-1);else if (mode === 'yesterday') sel = d.slice(-2, -1);else if (mode === 'date') sel = d.filter(x => x.date === date);else if (mode === 'range') sel = d.filter(x => x.date >= from && x.date <= to);else if (mode === 'monthavg') {
+      const m = d.slice(-30);
+      const avg = Math.round(m.reduce((a, x) => a + x.ktg, 0) / (m.length || 1) * 10) / 10;
+      sel = [{
+        date: 'среднее 30 дн',
+        ktg: avg,
+        ready: '',
+        total: '',
+        repair: ''
+      }];
+    }
+    const lines = ['КТГ собственного парка · ' + periodLabel(), head.join(';'), ...sel.map(x => [x.date.length === 10 ? fmtRu(x.date) : x.date, x.ktg, x.ready, x.total, x.repair].join(';'))];
+    return '﻿' + lines.join('\r\n');
+  };
   const dl = async r => {
     try {
       let text;
-      if (r.f) {
-        text = await (await fetch(r.f + '?t=' + Date.now())).text();
+      if (r.key === 'ktg') {
+        text = await dlKtg();
+      } else if (['own', 'hired', 'stores', 'candidates'].includes(r.key)) {
+        text = await (await fetch('/data/' + {
+          own: 'own-fleet',
+          hired: 'hired-fleet',
+          stores: 'stores',
+          candidates: 'candidates'
+        }[r.key] + '.csv?t=' + Date.now())).text();
       } else if (r.key === 'stats') {
-        const d = await (await fetch('/data/stats.json?t=' + Date.now())).json();
-        const rows = d.rows || [];
+        const rows = (await (await fetch('/data/stats.json?t=' + Date.now())).json()).rows || [];
         const stores = [...new Set(rows.map(x => x.store))];
         const agg = stores.map(s => {
           const rs = rows.filter(x => x.store === s);
@@ -3512,7 +4037,7 @@ function Reports() {
             p = rs.reduce((a, x) => a + x.planned, 0);
           return [s, rs[0] ? rs[0].project : '', c, p, p ? Math.round(c / p * 100) : 0, rs.length ? Math.round(rs.reduce((a, x) => a + x.onTime, 0) / rs.length) : 0];
         });
-        text = '﻿' + [['Магазин', 'Проект', 'Закрыто маршрутов', 'Запланировано', 'Выполнение %', 'В срок %'].join(';'), ...agg.map(x => x.join(';'))].join('\r\n');
+        text = '﻿' + [['Магазин', 'Проект', 'Закрыто', 'План', 'Выполнение %', 'В срок %'].join(';'), ...agg.map(x => x.join(';'))].join('\r\n');
       } else {
         const [own, hired, stores, routes] = await Promise.all(['/data/own-fleet.json', '/data/hired-fleet.json', '/data/stores.json', '/data/routes.json'].map(u => fetch(u + '?t=' + Date.now()).then(x => x.json())));
         const ownOn = own.filter(v => v.status === 'На линии').length,
@@ -3524,7 +4049,7 @@ function Reports() {
       a.href = URL.createObjectURL(new Blob([text], {
         type: 'text/csv;charset=utf-8'
       }));
-      a.download = r.n + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.download = r.key + '_' + new Date().toISOString().slice(0, 10) + '.csv';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -3542,7 +4067,8 @@ function Reports() {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          report: r.key
+          report: r.key,
+          ...opts()
         })
       });
       const out = await res.json();
@@ -3559,13 +4085,72 @@ function Reports() {
     setTimeout(() => setStatus(s => ({
       ...s,
       [r.key]: undefined
-    })), 4000);
+    })), 5000);
   };
+  const MB = (id, txt) => /*#__PURE__*/React.createElement("button", {
+    className: mode === id ? 'primary' : '',
+    onClick: () => setMode(id)
+  }, txt);
   return /*#__PURE__*/React.createElement(Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "page-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, "Отчёты"), /*#__PURE__*/React.createElement("div", {
     className: "sub"
-  }, "► выгрузки по автопарку · CSV (Excel) · отправка в Telegram (@gfd_otchet_bot)"))), /*#__PURE__*/React.createElement("div", {
+  }, "► выгрузки и отправка в Telegram (@gfd_otchet_bot) · выбор периода"))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t"
+  }, "Период отчётов"), /*#__PURE__*/React.createElement("div", {
+    className: "m"
+  }, "применяется ко всем")), /*#__PURE__*/React.createElement("div", {
+    className: "b"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    }
+  }, MB('today', 'сегодня'), MB('yesterday', 'вчера'), MB('monthavg', 'среднее за месяц'), MB('date', 'дата'), MB('range', 'период'), mode === 'date' && /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: date,
+    min: "2026-06-26",
+    max: "2026-09-23",
+    onChange: e => setDate(e.target.value),
+    style: DINP
+  }), mode === 'range' && /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      alignItems: 'center',
+      color: 'var(--cream-3)',
+      fontSize: 12
+    }
+  }, "с ", /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: from,
+    min: "2026-06-26",
+    max: "2026-09-23",
+    onChange: e => setFrom(e.target.value),
+    style: DINP
+  }), " по ", /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: to,
+    min: "2026-06-26",
+    max: "2026-09-23",
+    onChange: e => setTo(e.target.value),
+    style: DINP
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "m",
+    style: {
+      marginLeft: 'auto'
+    }
+  }, "выбрано: ", periodLabel())))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 14
+    }
+  }), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "h"
@@ -3573,7 +4158,7 @@ function Reports() {
     className: "t"
   }, "Доступные отчёты"), /*#__PURE__*/React.createElement("div", {
     className: "m"
-  }, "CSV · UTF-8")), /*#__PURE__*/React.createElement("div", {
+  }, "CSV · UTF-8 · период: ", periodLabel())), /*#__PURE__*/React.createElement("div", {
     className: "b flush"
   }, REP.map((r, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -3583,7 +4168,7 @@ function Reports() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "ico"
-  }, "CSV"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, r.key === 'ktg' ? 'КТГ' : 'CSV'), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "name"
   }, r.t), /*#__PURE__*/React.createElement("div", {
     className: "desc"
@@ -3591,7 +4176,9 @@ function Reports() {
     style: {
       display: 'flex',
       gap: 8,
-      alignItems: 'center'
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      justifyContent: 'flex-end'
     }
   }, status[r.key] && /*#__PURE__*/React.createElement("span", {
     style: {
@@ -3625,11 +4212,7 @@ function Reports() {
       margin: 0,
       lineHeight: 1.6
     }
-  }, "Кнопка «✈ В Telegram» отправляет отчёт файлом в чат руководителя через бота ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: 'var(--cream)'
-    }
-  }, "@gfd_otchet_bot"), ". Автоматическая рассылка по расписанию — следующим шагом (по схеме ОБЕ2)."))));
+  }, "«✈ В Telegram» отправляет отчёт файлом в чат руководителя за выбранный период. Автоматическая рассылка по расписанию настраивается в «Настройках»."))));
 }
 function App() {
   const [page, setPageRaw] = useState('dash');
